@@ -1,18 +1,18 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { JSX } from "react";
-import React from "react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { StaffData } from "@/interfaces/staffINterface";
-import { useDispatch } from "react-redux";
-import { userSignIn } from "@/redux/slices/userSlice";
-import { toast } from "sonner";
+'use client';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { JSX } from 'react';
+import React from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { StaffData } from '@/interfaces/staffINterface';
+import { useDispatch } from 'react-redux';
+import { userSignIn } from '@/redux/slices/userSlice';
+import { toast } from 'sonner';
 
 function SignIn(): JSX.Element {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -30,33 +30,37 @@ function SignIn(): JSX.Element {
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      setError("All fields must be provided");
+      setError('All fields must be provided');
       return;
     }
     try {
       setIsLoading(true);
       const data = { email, password };
-      const response = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        credentials: "include",
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       const result = await response.json();
+
+      if (!result.success) {
+        setError(result.message);
+      }
       if (response.ok) {
         const staff: StaffData = result.staffData;
         dispatch(userSignIn(staff));
-        toast("Suceessfully logged in", {
-          style: { backgroundColor: "green", color: "white" },
+        toast('Successfully logged in', {
+          style: { backgroundColor: 'green', color: 'white' },
         });
-        router.push("/dashboard/home");
+        router.push('/dashboard/home');
         return;
       }
     } catch (error) {
       console.error(error);
-      setError("Invalid credentials");
+      setError('Invalid credentials');
     } finally {
       setIsLoading(false);
     }
@@ -71,10 +75,7 @@ function SignIn(): JSX.Element {
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
         {error && <div className="text-red-700 text-center">{error}</div>}
         <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
             Email
           </label>
           <input
@@ -84,20 +85,17 @@ function SignIn(): JSX.Element {
             className={`w-full mt-1 p-3 border rounded-md focus:ring-2 outline-none 
           ${
             error
-              ? "border-red-500 focus:ring-red-400 focus:border-red-400"
-              : "focus:ring-blue-400 focus:border-blue-400"
+              ? 'border-red-500 focus:ring-red-400 focus:border-red-400'
+              : 'focus:ring-blue-400 focus:border-blue-400'
           }`}
-            placeholder={"Enter your email"}
+            placeholder={'Enter your email'}
             value={email}
             onChange={handleEmailChange}
           />
         </div>
 
         <div className="mb-6">
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
             Password
           </label>
           <input
@@ -107,10 +105,10 @@ function SignIn(): JSX.Element {
             className={`w-full mt-1 p-3 border rounded-md focus:ring-2 outline-none 
               ${
                 error
-                  ? "border-red-500 focus:ring-red-400 focus:border-red-400"
-                  : "focus:ring-blue-400 focus:border-blue-400"
+                  ? 'border-red-500 focus:ring-red-400 focus:border-red-400'
+                  : 'focus:ring-blue-400 focus:border-blue-400'
               }`}
-            placeholder={"Enter your email"}
+            placeholder={'Enter your email'}
             onChange={handlePasswordChange}
           />
         </div>
