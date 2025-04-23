@@ -37,7 +37,7 @@ function Header() {
 
       if (response.ok) {
         router.push("/sign-in");
-        toast("Suceessfully logged out", {
+        toast("Successfully logged out", {
           style: { backgroundColor: "green", color: "white" },
         });
         dispatch(userSignOut());
@@ -48,10 +48,11 @@ function Header() {
         });
         return;
       }
-    } catch (error: any) {
+    } catch (error: never) {
       toast("a problem occurred while signing out!", {
         style: { backgroundColor: "red", color: "white" },
       });
+      console.error(error);
     } finally {
       setIsLoggingOut(false);
     }

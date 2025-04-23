@@ -3,11 +3,14 @@
 import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import useAuth from "@/lib/hooks/useAuth";
+import {useDispatch} from "react-redux";
+import {userSignOut} from "@/redux/slices/userSlice";
 
 function ProtectedRoutes({ children }: { children: React.ReactNode }) {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -20,6 +23,7 @@ function ProtectedRoutes({ children }: { children: React.ReactNode }) {
         );
 
         if (!res.ok) {
+          dispatch(userSignOut());
           router.push("/sign-in");
         }
       } catch (error) {
