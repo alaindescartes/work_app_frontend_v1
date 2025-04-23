@@ -48,7 +48,7 @@ function Header() {
         });
         return;
       }
-    } catch (error: never) {
+    } catch (error: unknown) {
       toast("a problem occurred while signing out!", {
         style: { backgroundColor: "red", color: "white" },
       });
