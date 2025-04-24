@@ -22,7 +22,6 @@ function AllGroupHomes() {
       );
 
       const data = await response.json();
-      console.log(data.groupHomes);
       if (response.ok) {
         setHomes(data.groupHomes);
       } else {
@@ -61,7 +60,7 @@ function AllGroupHomes() {
                 </div>
               </div>
             ))
-          : homes.map((home) => (
+          : homes.map(home => (
               <Link href={`/homes/${home.id}`} key={home.id}>
                 <div className="bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-400 cursor-pointer transform transition duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
                   {/* Image or Placeholder */}

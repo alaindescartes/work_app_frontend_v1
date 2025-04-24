@@ -20,7 +20,6 @@ import {
 export default function Edit_RemoveGroupHome() {
   const [homes, setHomes] = useState<GroupHomeFetch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { user } = useAuth();
 
   const getAllHomes = async () => {
     try {
@@ -35,7 +34,6 @@ export default function Edit_RemoveGroupHome() {
       );
 
       const data = await response.json();
-      console.log(data.groupHomes);
       if (response.ok) {
         setHomes(data.groupHomes);
       } else {
@@ -122,7 +120,10 @@ export default function Edit_RemoveGroupHome() {
               </div>
             </div>
             <div className="flex flex-row justify-center gap-4 sm:gap-4 sm:justify-end items-center">
-              <Link href={'#'} className="text-blue-600 hover:underline">
+              <Link
+                href={`${process.env.NEXT_PUBLIC_FRONEND_BASE_URL}/dashboard/edit-home/${home.id}`}
+                className="text-blue-600 hover:underline"
+              >
                 Edit
               </Link>
 
