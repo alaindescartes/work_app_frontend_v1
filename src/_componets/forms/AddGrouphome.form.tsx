@@ -30,13 +30,13 @@ function AddGroupHomeForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setFormData((prev) => ({ ...prev, image: file }));
+      setFormData(prev => ({ ...prev, image: file }));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,8 +91,6 @@ function AddGroupHomeForm() {
         // Stretch to fill container, set up scroll if content overflows
         className="flex-1 bg-white p-8 rounded-xl shadow-lg space-y-5 border border-purple-200 w-full overflow-y-auto"
       >
-        <h2 className="text-3xl font-bold text-purple-700 text-center">Add Group Home</h2>
-
         {[
           { label: 'Name', name: 'name', required: true },
           { label: 'Address', name: 'address', required: true },
@@ -101,7 +99,7 @@ function AddGroupHomeForm() {
           { label: "Manager's Name", name: 'managerName' },
           { label: "Supervisor's Name", name: 'supervisorName' },
           { label: 'Type', name: 'type' },
-        ].map((field) => (
+        ].map(field => (
           <div key={field.name}>
             <div className="flex flex-row gap-2">
               <label className="block text-sm font-medium text-purple-600 mb-1">

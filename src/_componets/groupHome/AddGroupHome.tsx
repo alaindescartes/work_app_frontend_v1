@@ -1,5 +1,5 @@
-import React from "react";
-import AddGroupHomeForm from "./forms/AddGrouphome.form";
+import React from 'react';
+import AddGroupHomeForm from '../forms/AddGrouphome.form';
 
 function AddGroupHome() {
   return (
