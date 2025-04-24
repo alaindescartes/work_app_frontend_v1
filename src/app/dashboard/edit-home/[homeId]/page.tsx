@@ -33,13 +33,13 @@ export default function Page() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, image: file }));
+      setFormData((prev) => ({ ...prev, image: file }));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,7 +63,7 @@ export default function Page() {
     try {
       setIsSubmitting(true);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grouphome-route/add-grouphome`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grouphome-route/edit-grouphome/${params.homeId}/home`,
         {
           method: 'POST',
           body: data,
@@ -72,7 +72,7 @@ export default function Page() {
       );
 
       if (response.ok) {
-        toast('Successfully added!', { style: { backgroundColor: 'green', color: 'white' } });
+        toast('Successfully edited!', { style: { backgroundColor: 'green', color: 'white' } });
         console.log(response);
       }
     } catch (e) {
@@ -97,8 +97,8 @@ export default function Page() {
         );
         if (result.ok) {
           const response = await result.json();
-          const data = response.groupHome; // ✅ get the actual group home fields
-          setFormData(prev => ({
+          const data = response.groupHome;
+          setFormData((prev) => ({
             ...prev,
             name: data.name || '',
             address: data.address || '',
@@ -138,7 +138,7 @@ export default function Page() {
           { label: "Manager's Name", name: 'managerName' },
           { label: "Supervisor's Name", name: 'supervisorName' },
           { label: 'Type', name: 'type' },
-        ].map(field => (
+        ].map((field) => (
           <div key={field.name}>
             <div className="flex flex-row gap-2">
               <label className="block text-sm font-medium text-purple-600 mb-1">
@@ -187,7 +187,7 @@ export default function Page() {
           disabled={isSubmitting}
           className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer"
         >
-          Edit Group Home
+          {isSubmitting ? 'Editing...' : ' Edit Group Home'}
         </Button>
       </form>
     </div>
