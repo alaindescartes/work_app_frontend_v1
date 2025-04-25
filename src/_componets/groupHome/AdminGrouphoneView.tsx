@@ -10,14 +10,14 @@ import Edit_RemoveGroupHome from '@/_componets/groupHome/Edit_RemoveGroupHome';
 
 function AdminGrouphoneView() {
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       {/*form to add a groupHome*/}
-      <div className="flex flex-col p-7">
-        <h2 className="text-3xl font-semibold mb-4 text-gray-800">Actions</h2>
+      <div className="flex flex-col max-w-4xl mx-auto mt-10 p-7 bg-white shadow-lg rounded-lg">
+        <h2 className="text-4xl font-bold mb-6 text-purple-700 text-center">Admin Actions</h2>
         {/*add groupHome*/}
         <Accordion type="single" collapsible>
           <AccordionItem value="item-1">
-            <AccordionTrigger className="text-center text-2xl hover:cursor-pointer">
+            <AccordionTrigger className="text-xl font-medium text-purple-800 hover:underline transition-all">
               Add a GroupHome
             </AccordionTrigger>
             <AccordionContent>
@@ -28,7 +28,7 @@ function AdminGrouphoneView() {
         {/*  edit or delete groupHome*/}
         <Accordion type="single" collapsible>
           <AccordionItem value="item-1">
-            <AccordionTrigger className="text-center text-2xl hover:cursor-pointer">
+            <AccordionTrigger className="text-xl font-medium text-purple-800 hover:underline transition-all">
               Edit or Delete GroupHome
             </AccordionTrigger>
             <AccordionContent>

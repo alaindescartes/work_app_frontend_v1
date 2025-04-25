@@ -12,5 +12,5 @@ export interface GroupHomeInsert {
 
 export interface GroupHomeFetch extends GroupHomeInsert {
   id: number;
-  createdAt: Date;
+  createdAt: string;
 }

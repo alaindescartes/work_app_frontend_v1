@@ -1,13 +1,12 @@
 'use client';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
-import useAuth from '@/lib/hooks/useAuth';
 
 function AllGroupHomes() {
   const [homes, setHomes] = useState<GroupHomeFetch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { user } = useAuth();
 
   const getAllHomes = async () => {
     try {
@@ -28,7 +27,10 @@ function AllGroupHomes() {
         console.log(data.message);
       }
     } catch (error: any) {
-      console.log(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error.message);
+      }
+      // TODO: send error to monitoring service in production
     } finally {
       setIsLoading(false);
     }
@@ -60,15 +62,18 @@ function AllGroupHomes() {
                 </div>
               </div>
             ))
-          : homes.map(home => (
-              <Link href={`/homes/${home.id}`} key={home.id}>
+          : homes.map((home) => (
+              <Link href={`/dashboard/group-homes/${home.id}`} key={home.id}>
                 <div className="bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-400 cursor-pointer transform transition duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
                   {/* Image or Placeholder */}
                   {home.image_url ? (
-                    <img
+                    <Image
                       src={home.image_url}
                       alt={`Image of ${home.name}`}
-                      className="block w-full max-h-64 object-cover bg-white"
+                      width={500}
+                      height={256}
+                      className="w-full max-h-64 object-cover bg-white"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-64 bg-purple-100 flex items-center justify-center">

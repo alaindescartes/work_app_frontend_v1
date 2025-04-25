@@ -73,7 +73,6 @@ export default function Page() {
 
       if (response.ok) {
         toast('Successfully edited!', { style: { backgroundColor: 'green', color: 'white' } });
-        console.log(response);
       }
     } catch (e) {
       console.error(e);
