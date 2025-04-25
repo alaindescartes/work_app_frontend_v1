@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Client() {
   return (
@@ -14,7 +15,12 @@ export default function Client() {
             unoptimized
           />
           <div className="p-4">
-            <h2 className="text-lg font-semibold text-gray-800">John Doe</h2>
+            <Link href="#">
+              <h2 className="text-lg font-semibold text-gray-800 hover:underline hover:text-blue-500">
+                John Doe
+              </h2>
+            </Link>
+
             <h3 className="text-sm text-gray-500">
               Status: <span className="font-medium text-green-600">Onsite</span>
             </h3>
