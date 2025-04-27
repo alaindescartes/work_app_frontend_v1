@@ -1,13 +1,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function Client() {
+interface clientInfo {
+  firstName: string;
+  lastName: string;
+  clientImage: string;
+}
+export default function Client(props: clientInfo) {
   return (
     <div className="p-4 bg-gray-100 flex justify-start">
       <div className="bg-white border border-gray-200 shadow rounded-lg overflow-hidden w-full max-w-sm">
         <div className="flex items-start justify-start gap-4">
           <Image
-            src="https://images.unsplash.com/photo-1745433921735-f5e2450cbec1?q=80&w=1587&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            src={props.clientImage}
             alt="image of a resident"
             width={96}
             height={96}
@@ -18,7 +23,7 @@ export default function Client() {
             {/*TODO:remember to make client info view dynamic*/}
             <Link href="/dashboard/client/1">
               <h2 className="text-lg font-semibold text-gray-800 hover:underline hover:text-blue-500">
-                John Doe
+                {props.firstName} {props.lastName}
               </h2>
             </Link>
 
