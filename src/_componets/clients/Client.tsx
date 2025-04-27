@@ -15,7 +15,8 @@ export default function Client() {
             unoptimized
           />
           <div className="p-4">
-            <Link href="#">
+            {/*TODO:remember to make client info view dynamic*/}
+            <Link href="/dashboard/client/1">
               <h2 className="text-lg font-semibold text-gray-800 hover:underline hover:text-blue-500">
                 John Doe
               </h2>
