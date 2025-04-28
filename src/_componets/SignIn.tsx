@@ -45,21 +45,24 @@ function SignIn(): JSX.Element {
         body: JSON.stringify(data),
       });
       const result = await response.json();
+      console.log(result);
 
-      if (!result.success) {
+      if (!response.ok) {
         setError(result.message);
-      }
-      if (response.ok) {
-        const staff: StaffData = result.staffData;
-        dispatch(userSignIn(staff));
-        toast('Successfully logged in', {
-          style: { backgroundColor: 'green', color: 'white' },
-        });
-        router.push('/dashboard/home');
         return;
       }
+
+      const staff: StaffData = result.staffData;
+      dispatch(userSignIn(staff));
+      toast('Successfully logged in', {
+        style: { backgroundColor: 'green', color: 'white' },
+      });
+      router.push('/dashboard/home');
     } catch (error) {
-      console.error(error);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.error(error);
+      }
+      //TODO:log error to a login provider
       setError('Invalid credentials');
     } finally {
       setIsLoading(false);
