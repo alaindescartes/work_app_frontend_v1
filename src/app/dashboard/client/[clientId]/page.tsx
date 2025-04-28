@@ -3,7 +3,7 @@
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useParams, useRouter } from 'next/navigation';
-
+import Image from 'next/image';
 import { FaArrowLeft } from 'react-icons/fa';
 
 export default function Page() {
@@ -33,10 +33,12 @@ export default function Page() {
 
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-8 space-y-6">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-          <img
+          <Image
             src={resident.image_url || '/defaultUser.jpg'}
             alt={`${resident.firstName} ${resident.lastName}`}
-            className="w-32 h-32 object-cover rounded-full border-2 border-purple-400"
+            width={128}
+            height={128}
+            className="object-cover rounded-full border-2 border-purple-400"
           />
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-purple-700">
