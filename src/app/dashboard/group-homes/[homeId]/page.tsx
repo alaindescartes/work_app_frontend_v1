@@ -6,14 +6,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
 import { RootState } from '@/redux/store';
 import { ResidentFetch } from '@/interfaces/clientInterface';
-import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
-import { useGroupHome } from '@/lib/hooks/useGroupHome';
+import { Button } from '@/components/ui/button';
+import useAuth from '@/lib/hooks/useAuth';
+import { FaPlus } from 'react-icons/fa6';
+import Link from 'next/link';
 
 export default function Page() {
   const params = useParams();
   const dispatch = useDispatch();
   const home = useSelector((state: RootState) => state.reducer.grouphome.grouphomeInfo);
   const [clients, setClients] = useState<ResidentFetch[]>([]);
+  const role = useAuth().user.role;
+  const [adminView, setAdminView] = useState<boolean>(false);
 
   useEffect(() => {
     const getHome = async () => {
@@ -53,7 +57,6 @@ export default function Page() {
         if (residentsData.ok) {
           const data = await residentsData.json();
           setClients(data.residentsData);
-          console.log(data);
         }
       } catch (e: any) {
         if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
@@ -64,9 +67,20 @@ export default function Page() {
     };
     fetchClients();
   }, [params.homeId]);
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-purple-700 mb-4 text-center p-6">{home.name}</h1>
+      <div className="flex justify-center">
+        {role === 'admin' && (
+          <Link href={`/dashboard/client/new/${params.homeId}`}>
+            <Button className="flex items-center gap-2 bg-purple-500 hover:bg-purple-800 text-white font-semibold px-6 py-3 rounded-lg shadow-md mb-3 cursor-pointer">
+              <FaPlus className="w-4 h-4" />
+              Add New Client
+            </Button>
+          </Link>
+        )}
+      </div>
       <ClientList clientArray={clients} />
     </div>
   );
