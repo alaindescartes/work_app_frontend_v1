@@ -108,7 +108,7 @@ function SignIn(): JSX.Element {
                   ? 'border-red-500 focus:ring-red-400 focus:border-red-400'
                   : 'focus:ring-blue-400 focus:border-blue-400'
               }`}
-            placeholder={'Enter your email'}
+            placeholder={'Enter your password'}
             onChange={handlePasswordChange}
           />
         </div>
