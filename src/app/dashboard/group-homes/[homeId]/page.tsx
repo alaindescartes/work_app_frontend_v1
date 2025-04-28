@@ -78,8 +78,14 @@ export default function Page() {
   }, [params.homeId, dispatch]);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-purple-700 mb-4 text-center p-6">{home?.name}</h1>
+    <div className="p-6">
+      <button
+        onClick={() => window.history.back()}
+        className="text-purple-700 hover:text-purple-900 flex items-center mb-4"
+      >
+        ← Back
+      </button>
+      <h1 className="text-3xl font-bold text-purple-700 mb-4 text-center">{home?.name}</h1>
       <div className="flex justify-center">
         {role === 'admin' && (
           <Link href={`/dashboard/client/new/${params.homeId}`}>
