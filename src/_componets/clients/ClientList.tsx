@@ -22,6 +22,7 @@ export default function ClientList({ clientArray }: ClientListProps) {
           firstName={client.firstName}
           lastName={client.lastName}
           clientImage={client.image_url || '/defaultUser.jpg'}
+          clientId={client.id}
         />
       ))}
     </>

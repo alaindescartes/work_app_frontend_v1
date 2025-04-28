@@ -1,9 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
+import { ResidentFetch } from '@/interfaces/clientInterface';
 
-export interface GroupHomeState {
+interface GroupHomeState {
   grouphomeInfo: GroupHomeFetch;
+  residents: ResidentFetch[];
 }
 
 const initialState: GroupHomeState = {
@@ -20,6 +22,7 @@ const initialState: GroupHomeState = {
     id: 0,
     createdAt: new Date().toISOString(),
   },
+  residents: [],
 };
 
 export const GrouphomeSlice = createSlice({
@@ -28,6 +31,9 @@ export const GrouphomeSlice = createSlice({
   reducers: {
     setGrouphomeInfo: (state, action: PayloadAction<GroupHomeFetch>) => {
       state.grouphomeInfo = action.payload;
+    },
+    setGroupHomeClients: (state, action: PayloadAction<ResidentFetch[]>) => {
+      state.residents = action.payload;
     },
     resetGrouphomeInfo: (state) => {
       state.grouphomeInfo = {
@@ -43,10 +49,11 @@ export const GrouphomeSlice = createSlice({
         id: 0,
         createdAt: new Date().toISOString(),
       };
+      state.residents = [];
     },
   },
 });
 
-export const { setGrouphomeInfo, resetGrouphomeInfo } = GrouphomeSlice.actions;
+export const { setGrouphomeInfo, resetGrouphomeInfo, setGroupHomeClients } = GrouphomeSlice.actions;
 
 export default GrouphomeSlice.reducer;

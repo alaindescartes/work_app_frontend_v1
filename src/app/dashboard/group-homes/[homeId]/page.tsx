@@ -3,12 +3,16 @@ import ClientList from '@/_componets/clients/ClientList';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
+import {
+  resetGrouphomeInfo,
+  setGroupHomeClients,
+  setGrouphomeInfo,
+} from '@/redux/slices/groupHomeSlice';
 import { RootState } from '@/redux/store';
 import { ResidentFetch } from '@/interfaces/clientInterface';
 import { Button } from '@/components/ui/button';
 import useAuth from '@/lib/hooks/useAuth';
-import { FaPlus } from 'react-icons/fa6';
+import { FaPlus } from 'react-icons/fa';
 import Link from 'next/link';
 
 export default function Page() {
@@ -18,6 +22,10 @@ export default function Page() {
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const role = useAuth().user.role;
   const [adminView, setAdminView] = useState<boolean>(false);
+
+  useEffect(() => {
+    dispatch(resetGrouphomeInfo());
+  }, [params.homeId, dispatch]);
 
   useEffect(() => {
     const getHome = async () => {
@@ -57,6 +65,7 @@ export default function Page() {
         if (residentsData.ok) {
           const data = await residentsData.json();
           setClients(data.residentsData);
+          dispatch(setGroupHomeClients(data.residentsData));
         }
       } catch (e: any) {
         if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
@@ -66,11 +75,11 @@ export default function Page() {
       }
     };
     fetchClients();
-  }, [params.homeId]);
+  }, [params.homeId, dispatch]);
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-purple-700 mb-4 text-center p-6">{home.name}</h1>
+      <h1 className="text-3xl font-bold text-purple-700 mb-4 text-center p-6">{home?.name}</h1>
       <div className="flex justify-center">
         {role === 'admin' && (
           <Link href={`/dashboard/client/new/${params.homeId}`}>

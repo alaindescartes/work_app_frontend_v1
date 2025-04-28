@@ -1,14 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
 import useAuth from '@/lib/hooks/useAuth';
-import { useState } from 'react';
 
 interface clientInfo {
   firstName: string;
   lastName: string;
   clientImage: string;
+  clientId: number;
 }
 export default function Client(props: clientInfo) {
   const role = useAuth().user.role;
@@ -26,7 +25,7 @@ export default function Client(props: clientInfo) {
             unoptimized
           />
           <div className="flex flex-col">
-            <Link href="/dashboard/client/1">
+            <Link href={`/dashboard/client/${props.clientId}`}>
               <h2 className="text-xl font-bold text-gray-800 hover:underline hover:text-blue-500">
                 {props.firstName} {props.lastName}
               </h2>
