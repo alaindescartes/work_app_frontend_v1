@@ -21,6 +21,15 @@ export default function Page() {
     );
   }
 
+  // Parse primaryDiagnosis and allergies safely if needed
+  const primaryDiagnosisArray = Array.isArray(resident.primaryDiagnosis)
+    ? resident.primaryDiagnosis
+    : JSON.parse(resident.primaryDiagnosis || '[]');
+
+  const allergiesArray = Array.isArray(resident.allergies)
+    ? resident.allergies
+    : JSON.parse(resident.allergies || '[]');
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-purple-50 to-white flex flex-col items-center p-6">
       {/* Back Button */}
@@ -73,14 +82,14 @@ export default function Page() {
         <div>
           <h4 className="font-semibold text-purple-600 mb-2">Primary Diagnosis:</h4>
           <ul className="list-disc list-inside space-y-1 text-gray-700">
-            {resident.primaryDiagnosis.map((diagnosis, idx) => (
+            {primaryDiagnosisArray.map((diagnosis: string, idx: number) => (
               <li key={idx}>{diagnosis}</li>
             ))}
           </ul>
 
           <h4 className="font-semibold text-purple-600 mt-6 mb-2">Allergies:</h4>
           <ul className="list-disc list-inside space-y-1 text-gray-700">
-            {resident.allergies.map((allergy, idx) => (
+            {allergiesArray.map((allergy: string, idx: number) => (
               <li key={idx}>{allergy}</li>
             ))}
           </ul>

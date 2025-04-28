@@ -5,10 +5,12 @@ import { ResidentInsert } from '@/interfaces/clientInterface';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export default function AddResidentForm() {
   const formRefs = useRef<Record<string, HTMLInputElement | HTMLSelectElement | null>>({});
   const params = useParams();
+  const router = useRouter();
 
   const [formData, setFormData] = useState<
     Omit<ResidentInsert, 'image_url'> & { image_file: File | null }
@@ -35,17 +37,17 @@ export default function AddResidentForm() {
     const { name, type } = target;
 
     if (type === 'checkbox') {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [name]: (target as HTMLInputElement).checked,
       }));
     } else if (type === 'file') {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         image_file: (target as HTMLInputElement).files?.[0] ?? null,
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [name]: target.value,
       }));
@@ -62,10 +64,10 @@ export default function AddResidentForm() {
 
     const values = sanitized
       .split(',')
-      .map(item => item.trim())
-      .filter(item => item !== '');
+      .map((item) => item.trim())
+      .filter((item) => item !== '');
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: values,
     }));
@@ -86,7 +88,7 @@ export default function AddResidentForm() {
 
     let hasError = false;
 
-    requiredFields.forEach(field => {
+    requiredFields.forEach((field) => {
       const input = formRefs.current[field];
       if (input && !input.value.trim()) {
         input.style.borderColor = 'red';
@@ -135,6 +137,7 @@ export default function AddResidentForm() {
           toast('client added successfully.', {
             style: { backgroundColor: 'green', color: 'white' },
           });
+          router.push(`/dashboard/group-homes/${params.homeId}`);
           console.log(response.body);
         }
       } catch (e) {
@@ -160,7 +163,7 @@ export default function AddResidentForm() {
         <div>
           <label className="block text-sm font-semibold">First Name</label>
           <input
-            ref={el => {
+            ref={(el) => {
               formRefs.current['firstName'] = el;
             }}
             type="text"
@@ -173,7 +176,7 @@ export default function AddResidentForm() {
         <div>
           <label className="block text-sm font-semibold">Last Name</label>
           <input
-            ref={el => {
+            ref={(el) => {
               formRefs.current['lastName'] = el;
             }}
             type="text"
@@ -187,7 +190,7 @@ export default function AddResidentForm() {
         <div>
           <label className="block text-sm font-semibold">Date of Birth</label>
           <input
-            ref={el => {
+            ref={(el) => {
               formRefs.current['dateOfBirth'] = el;
             }}
             type="date"
@@ -201,7 +204,7 @@ export default function AddResidentForm() {
         <div>
           <label className="block text-sm font-semibold">Gender</label>
           <select
-            ref={el => {
+            ref={(el) => {
               formRefs.current['gender'] = el;
             }}
             name="gender"
@@ -220,7 +223,7 @@ export default function AddResidentForm() {
           <label className="block text-sm font-semibold">Primary Diagnosis (comma separated)</label>
           <input
             type="text"
-            onChange={e => handleArrayChange(e, 'primaryDiagnosis')}
+            onChange={(e) => handleArrayChange(e, 'primaryDiagnosis')}
             className="w-full p-2 border rounded"
             placeholder="e.g. Autism, Epilepsy"
           />
@@ -230,7 +233,7 @@ export default function AddResidentForm() {
           <label className="block text-sm font-semibold">Allergies (comma separated)</label>
           <input
             type="text"
-            onChange={e => handleArrayChange(e, 'allergies')}
+            onChange={(e) => handleArrayChange(e, 'allergies')}
             className="w-full p-2 border rounded"
             placeholder="e.g. Peanuts, Shellfish"
           />
@@ -239,7 +242,7 @@ export default function AddResidentForm() {
         <div>
           <label className="block text-sm font-semibold">Admission Date</label>
           <input
-            ref={el => {
+            ref={(el) => {
               formRefs.current['admissionDate'] = el;
             }}
             type="date"
@@ -253,7 +256,7 @@ export default function AddResidentForm() {
         <div>
           <label className="block text-sm font-semibold">Healthcare Number</label>
           <input
-            ref={el => {
+            ref={(el) => {
               formRefs.current['healthcareNumber'] = el;
             }}
             type="text"
