@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import useAuth from '@/lib/hooks/useAuth';
 import { FaPlus } from 'react-icons/fa';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function Page() {
   const params = useParams();
@@ -22,6 +23,8 @@ export default function Page() {
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const role = useAuth().user.role;
   const [adminView, setAdminView] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [ClientIdToDelete, setClientIdToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(resetGrouphomeInfo());
@@ -77,6 +80,49 @@ export default function Page() {
     fetchClients();
   }, [params.homeId, dispatch]);
 
+  const handleDeleteClient = async (id: string) => {
+    try {
+      setClientIdToDelete(id);
+      setIsDeleting(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/delete-resident/${id}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        toast('error deleting client...', {
+          style: {
+            backgroundColor: 'red',
+            color: 'white',
+          },
+        });
+        return;
+      }
+      const data = await response.json();
+      const filteredClients = clients.filter(client => client.id !== data.resident.id);
+      setClients(filteredClients);
+
+      //update client redux
+      dispatch(setGroupHomeClients(filteredClients));
+      toast('Client deleted successfully.', {
+        style: {
+          backgroundColor: 'green',
+          color: 'white',
+        },
+      });
+    } catch (e: any) {
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.error('Error deleting client...', e.message);
+      }
+      // TODO: send error to monitoring service in production
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <button
@@ -96,7 +142,11 @@ export default function Page() {
           </Link>
         )}
       </div>
-      <ClientList clientArray={clients} />
+      <ClientList
+        clientArray={clients}
+        onDeleteClient={handleDeleteClient}
+        deletingClientId={Number(ClientIdToDelete)}
+      />
     </div>
   );
 }

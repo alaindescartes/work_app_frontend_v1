@@ -8,9 +8,13 @@ interface clientInfo {
   lastName: string;
   clientImage: string;
   clientId: number;
+  handleDeleteClient: (id: string) => void;
+  isDeleting: boolean;
 }
+
 export default function Client(props: clientInfo) {
   const role = useAuth().user.role;
+
   return (
     <div className="p-4 bg-gray-100 w-full">
       <div className="bg-white border border-gray-200 shadow rounded-lg overflow-hidden w-full flex flex-col sm:flex-row sm:items-center p-6">
@@ -39,8 +43,11 @@ export default function Client(props: clientInfo) {
         {/* Right: Admin Buttons */}
         {role === 'admin' && (
           <div className="flex justify-end gap-3 mt-4 sm:mt-0 w-full sm:w-1/4">
-            <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm">
-              Delete
+            <Button
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm"
+              onClick={() => props.handleDeleteClient(props.clientId.toString())}
+            >
+              {props.isDeleting ? 'Deleting' : 'Delete'}
             </Button>
             <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm">
               Edit
