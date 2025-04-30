@@ -2,6 +2,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import useAuth from '@/lib/hooks/useAuth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface clientInfo {
   firstName: string;
@@ -43,12 +54,31 @@ export default function Client(props: clientInfo) {
         {/* Right: Admin Buttons */}
         {role === 'admin' && (
           <div className="flex justify-end gap-3 mt-4 sm:mt-0 w-full sm:w-1/4">
-            <Button
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm"
-              onClick={() => props.handleDeleteClient(props.clientId.toString())}
-            >
-              {props.isDeleting ? 'Deleting' : 'Delete'}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild={true}>
+                <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm">
+                  {props.isDeleting ? 'Deleting' : 'Delete'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete client details and
+                    from our servers.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => props.handleDeleteClient(props.clientId.toString())}
+                  >
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm">
               Edit
             </Button>
