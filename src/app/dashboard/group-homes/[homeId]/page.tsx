@@ -23,7 +23,6 @@ export default function Page() {
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const role = useAuth().user.role;
   const [adminView, setAdminView] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [ClientIdToDelete, setClientIdToDelete] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,10 +79,10 @@ export default function Page() {
     fetchClients();
   }, [params.homeId, dispatch]);
 
+  // function that handles deletion of a client
   const handleDeleteClient = async (id: string) => {
     try {
       setClientIdToDelete(id);
-      setIsDeleting(true);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/delete-resident/${id}`,
         {
@@ -118,8 +117,6 @@ export default function Page() {
         console.error('Error deleting client...', e.message);
       }
       // TODO: send error to monitoring service in production
-    } finally {
-      setIsDeleting(false);
     }
   };
 

@@ -56,7 +56,7 @@ export default function Client(props: clientInfo) {
           <div className="flex justify-end gap-3 mt-4 sm:mt-0 w-full sm:w-1/4">
             <AlertDialog>
               <AlertDialogTrigger asChild={true}>
-                <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm">
+                <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm cursor-pointer">
                   {props.isDeleting ? 'Deleting' : 'Delete'}
                 </Button>
               </AlertDialogTrigger>
@@ -79,9 +79,12 @@ export default function Client(props: clientInfo) {
               </AlertDialogContent>
             </AlertDialog>
 
-            <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm">
+            <Link
+              href={`/dashboard/client/new/edit/${props.clientId}`}
+              className="flex-1 inline-flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors"
+            >
               Edit
-            </Button>
+            </Link>
           </div>
         )}
       </div>
