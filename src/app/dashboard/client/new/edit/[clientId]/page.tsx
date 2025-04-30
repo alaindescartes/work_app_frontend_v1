@@ -1,4 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 'use client';
+import { FaArrowLeft } from 'react-icons/fa';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -236,6 +238,16 @@ export default function Page() {
       onSubmit={handleSubmit}
       className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow space-y-6"
     >
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center text-purple-700 hover:underline"
+        >
+          <FaArrowLeft className="mr-2" />
+          Back
+        </button>
+      </div>
       <h2 className="text-3xl font-bold text-center text-purple-700 mb-6">Edit Resident</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
