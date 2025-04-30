@@ -1,184 +1,446 @@
 'use client';
-import { useParams } from 'next/navigation';
-import { RootState } from '@/redux/store';
-import { useSelector } from 'react-redux';
+import { useParams, useRouter } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { ResidentInsert } from '@/interfaces/clientInterface';
 
 export default function Page() {
   const params = useParams();
-  const residents = useSelector((state: RootState) => state.reducer.grouphome.residents);
-  const clientToEdit = residents.find(client => client.id === Number(params.clientId));
-  console.log('clientToEdit', clientToEdit);
-  const [formData, setFormData] = useState<{
-    name: string;
-    address: string;
-    phone: string;
-    status: string;
-    managerName: string;
-    supervisorName: string;
-    type: string;
-    notes: string;
-    image: File | null;
-  }>({
-    name: '',
-    address: '',
-    phone: '',
-    status: '',
-    managerName: '',
-    supervisorName: '',
-    type: '',
-    notes: '',
-    image: null,
+
+  const [clientToEdit, setClientToEdit] = useState<ResidentInsert | null>(null);
+
+  useEffect(() => {
+    /**
+     * Fetches the client data for the given clientId from the API.
+     * Sets the clientToEdit state with the fetched data.
+     */
+    const fetchClient = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/single-client/${params.clientId}`,
+          {
+            credentials: 'include',
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setClientToEdit(data.client);
+        } else {
+          console.error('Failed to fetch client data');
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Error fetching client:', err);
+        }
+      }
+    };
+
+    fetchClient();
+  }, [params.clientId]);
+
+  const formRefs = useRef<Record<string, HTMLInputElement | HTMLSelectElement | null>>({});
+  const router = useRouter();
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  const [formData, setFormData] = useState<
+    Omit<ResidentInsert, 'image_url'> & { image_file: File | null }
+  >({
+    firstName: clientToEdit?.firstName ?? '',
+    lastName: clientToEdit?.lastName ?? '',
+    dateOfBirth: clientToEdit?.dateOfBirth?.slice(0, 10) ?? '',
+    gender: clientToEdit?.gender ?? '',
+    primaryDiagnosis: clientToEdit?.primaryDiagnosis ?? [],
+    allergies: clientToEdit?.allergies ?? [],
+    admissionDate: clientToEdit?.admissionDate?.slice(0, 10) ?? '',
+    status: clientToEdit?.status ?? '',
+    groupHomeId: clientToEdit?.groupHomeId ?? 0,
+    marital_status: clientToEdit?.marital_status ?? 'single',
+    healthcareNumber: clientToEdit?.healthcareNumber ?? '',
+    phoneNumber: clientToEdit?.phoneNumber ?? '',
+    isSelfGuardian: clientToEdit?.isSelfGuardian ?? false,
+    funderID: clientToEdit?.funderID ?? undefined,
+    image_file: null,
   });
 
-  // Populate form once the resident data is available
   useEffect(() => {
+    /**
+     * Updates the formData state whenever clientToEdit changes.
+     * Ensures the form fields reflect the latest client data.
+     */
     if (clientToEdit) {
       setFormData({
-        name: clientToEdit.firstName ?? '',
-        address: clientToEdit. ?? '',
-        phone: clientToEdit.phone ?? '',
+        firstName: clientToEdit.firstName ?? '',
+        lastName: clientToEdit.lastName ?? '',
+        dateOfBirth: clientToEdit.dateOfBirth?.slice(0, 10) ?? '',
+        gender: clientToEdit.gender ?? '',
+        primaryDiagnosis: clientToEdit.primaryDiagnosis ?? [],
+        allergies: clientToEdit.allergies ?? [],
+        admissionDate: clientToEdit.admissionDate?.slice(0, 10) ?? '',
         status: clientToEdit.status ?? '',
-        managerName: clientToEdit.managerName ?? '',
-        supervisorName: clientToEdit.supervisorName ?? '',
-        type: clientToEdit.type ?? '',
-        notes: clientToEdit.notes ?? '',
-        image: null,
+        groupHomeId: clientToEdit.groupHomeId ?? 0,
+        marital_status: clientToEdit.marital_status ?? 'single',
+        healthcareNumber: clientToEdit.healthcareNumber ?? '',
+        phoneNumber: clientToEdit.phoneNumber ?? '',
+        isSelfGuardian: clientToEdit.isSelfGuardian ?? false,
+        funderID: clientToEdit.funderID ?? undefined,
+        image_file: null,
       });
     }
   }, [clientToEdit]);
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  /**
+   * Handles changes to input and select elements.
+   * Updates formData state accordingly, handling checkboxes and file inputs specifically.
+   * @param e React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+   */
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target;
+    const { name, type } = target;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, image: file }));
+    if (type === 'checkbox') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: (target as HTMLInputElement).checked,
+      }));
+    } else if (type === 'file') {
+      setFormData((prev) => ({
+        ...prev,
+        image_file: (target as HTMLInputElement).files?.[0] ?? null,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: target.value,
+      }));
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  /**
+   * Handles changes to fields that are arrays represented as comma-separated strings.
+   * Sanitizes input by replacing dashes with commas, splitting, trimming, and filtering empty values.
+   * @param e React.ChangeEvent<HTMLInputElement>
+   * @param field The field name to update ('primaryDiagnosis' or 'allergies')
+   */
+  const handleArrayChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: 'primaryDiagnosis' | 'allergies'
+  ) => {
+    const { value } = e.target;
+
+    const sanitized = value.replace(/-/g, ',');
+
+    const values = sanitized
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item !== '');
+
+    setFormData((prev) => ({
+      ...prev,
+      [field]: values,
+    }));
   };
 
+  /**
+   * Handles form submission to update resident data.
+   * Validates required fields, constructs FormData, and sends a POST request to update the resident.
+   * Displays success or error toasts and navigates back on success.
+   * @param e React.FormEvent
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting resident:', formData);
 
-    // prepare data for the backend
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('address', formData.address);
-    data.append('phone', formData.phone);
-    data.append('status', formData.status);
-    data.append('managerName', formData.managerName);
-    data.append('supervisorName', formData.supervisorName);
-    data.append('type', formData.type);
-    data.append('notes', formData.notes);
-    if (formData.image) {
-      data.append('image', formData.image);
-    }
+    const requiredFields = [
+      'firstName',
+      'lastName',
+      'dateOfBirth',
+      'gender',
+      'admissionDate',
+      'healthcareNumber',
+    ];
 
-    //send data to the backend
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grouphome-route/edit-resident/${params.clientId}`,
-        {
-          method: 'POST',
-          body: data,
-          credentials: 'include',
-        }
-      );
+    let hasError = false;
 
-      if (response.ok) {
-        toast('Successfully added!', { style: { backgroundColor: 'green', color: 'white' } });
-        console.log(response);
+    requiredFields.forEach((field) => {
+      const input = formRefs.current[field];
+      if (input && !input.value.trim()) {
+        input.style.borderColor = 'red';
+        hasError = true;
+      } else if (input) {
+        input.style.borderColor = '';
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmitting(false);
+    });
+
+    if (!hasError) {
+      try {
+        setIsEditing(true);
+        const formPayload = new FormData();
+        formPayload.append('firstName', formData.firstName);
+        formPayload.append('lastName', formData.lastName);
+        formPayload.append('dateOfBirth', formData.dateOfBirth);
+        formPayload.append('gender', formData.gender);
+        formPayload.append('admissionDate', formData.admissionDate);
+        formPayload.append('healthcareNumber', formData.healthcareNumber);
+        formPayload.append('status', formData.status);
+        formPayload.append('marital_status', formData.marital_status);
+        formPayload.append('groupHomeId', String(formData.groupHomeId));
+        formPayload.append('isSelfGuardian', String(formData.isSelfGuardian));
+        formPayload.append('primaryDiagnosis', JSON.stringify(formData.primaryDiagnosis));
+        formPayload.append('allergies', JSON.stringify(formData.allergies));
+
+        if (formData.phoneNumber) {
+          formPayload.append('phoneNumber', formData.phoneNumber);
+        }
+        if (formData.funderID !== undefined) {
+          formPayload.append('funderID', String(formData.funderID));
+        }
+        if (formData.image_file) {
+          formPayload.append('image', formData.image_file);
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/edit-resident/${params?.clientId}`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            body: formPayload,
+          }
+        );
+
+        if (response.ok) {
+          toast('client Edited successfully.', {
+            style: { backgroundColor: 'green', color: 'white' },
+          });
+          router.push(`/dashboard/group-homes/${clientToEdit?.groupHomeId}`);
+          console.log(response.body);
+        }
+      } catch (e) {
+        toast('Error Editing client.', {
+          style: { backgroundColor: 'red', color: 'white' },
+        });
+        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+          console.error('Error submitting resident', e);
+        }
+      } finally {
+        setIsEditing(false);
+      }
     }
   };
-  if (!clientToEdit) {
-    return <p className="text-red-500">Client not found.</p>;
-  }
+
+  if (!clientToEdit) return <div className="text-center mt-8">Loading client data...</div>;
 
   return (
-    <div className="w-full h-full bg-purple-50 p-4 flex flex-col">
-      <div className="flex flex-col">
-        <p className="font-semibold">
-          Fields marked <span className="text-2xl text-red-700">*</span> are required.
-        </p>
-      </div>
-      <form
-        onSubmit={handleSubmit}
-        // Stretch to fill container, set up scroll if content overflows
-        className="flex-1 bg-white p-8 rounded-xl shadow-lg space-y-5 border border-purple-200 w-full overflow-y-auto"
-      >
-        {[
-          { label: 'Name', name: 'name', required: true },
-          { label: 'Address', name: 'address', required: true },
-          { label: 'Phone', name: 'phone', required: true },
-          { label: 'Status', name: 'status', required: true },
-          { label: "Manager's Name", name: 'managerName' },
-          { label: "Supervisor's Name", name: 'supervisorName' },
-          { label: 'Type', name: 'type' },
-        ].map(field => (
-          <div key={field.name}>
-            <div className="flex flex-row gap-2">
-              <label className="block text-sm font-medium text-purple-600 mb-1">
-                {field.label}
-              </label>
-              {field.required && <span className="text-red-700">*</span>}
-            </div>
-            <input
-              type="text"
-              name={field.name}
-              value={(formData[field.name as keyof typeof formData] as string) || ''}
-              onChange={handleChange}
-              className="w-full p-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
-              placeholder={field.label}
-            />
-          </div>
-        ))}
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow space-y-6"
+    >
+      <h2 className="text-3xl font-bold text-center text-purple-700 mb-6">Edit Resident</h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {/* Personal Info */}
+        <div>
+          <label className="block text-sm font-semibold">First Name</label>
+          <input
+            ref={(el) => {
+              formRefs.current['firstName'] = el;
+            }}
+            type="text"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold">Last Name</label>
+          <input
+            ref={(el) => {
+              formRefs.current['lastName'] = el;
+            }}
+            type="text"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
 
         <div>
-          <div className="flex flex-row gap-2">
-            <label className="block text-sm font-medium text-purple-600 mb-1">Image</label>
-          </div>
+          <label className="block text-sm font-semibold">Date of Birth</label>
+          <input
+            ref={(el) => {
+              formRefs.current['dateOfBirth'] = el;
+            }}
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Gender</label>
+          <select
+            ref={(el) => {
+              formRefs.current['gender'] = el;
+            }}
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+
+        {/* Health Info */}
+        <div>
+          <label className="block text-sm font-semibold">Primary Diagnosis (comma separated)</label>
+          <input
+            type="text"
+            onChange={(e) => handleArrayChange(e, 'primaryDiagnosis')}
+            className="w-full p-2 border rounded"
+            placeholder="e.g. Autism, Epilepsy"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Allergies (comma separated)</label>
+          <input
+            type="text"
+            onChange={(e) => handleArrayChange(e, 'allergies')}
+            className="w-full p-2 border rounded"
+            placeholder="e.g. Peanuts, Shellfish"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Admission Date</label>
+          <input
+            ref={(el) => {
+              formRefs.current['admissionDate'] = el;
+            }}
+            type="date"
+            name="admissionDate"
+            value={formData.admissionDate}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Healthcare Number</label>
+          <input
+            ref={(el) => {
+              formRefs.current['healthcareNumber'] = el;
+            }}
+            type="text"
+            name="healthcareNumber"
+            value={formData.healthcareNumber}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Phone Number</label>
+          <input
+            type="text"
+            name="phoneNumber"
+            value={formData.phoneNumber || ''}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        {/* Other Info */}
+        <div>
+          <label className="block text-sm font-semibold">Marital Status</label>
+          <select
+            name="marital_status"
+            value={formData.marital_status}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="single">Single</option>
+            <option value="married">Married</option>
+            <option value="divorced">Divorced</option>
+            <option value="widowed">Widowed</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Status</label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Group Home ID</label>
+          <input
+            type="number"
+            name="groupHomeId"
+            value={formData.groupHomeId}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            disabled={true}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold">Funder ID (optional)</label>
+          <input
+            type="number"
+            name="funderID"
+            value={formData.funderID ?? ''}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="isSelfGuardian"
+            checked={formData.isSelfGuardian}
+            onChange={handleChange}
+            className="h-4 w-4"
+          />
+          <label className="text-sm font-semibold">Self-Guardian?</label>
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-semibold">Upload Resident Image</label>
           <input
             type="file"
-            name="image"
             accept="image/*"
-            onChange={handleFileChange}
-            className="w-full p-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-purple-600 mb-1">Notes</label>
-          <textarea
-            name="notes"
-            value={formData.notes}
             onChange={handleChange}
-            rows={4}
-            className="w-full p-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
-            placeholder="Additional notes"
+            className="w-full p-2 border rounded"
           />
         </div>
+      </div>
 
+      <div className="flex justify-center">
         <Button
           type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer"
+          disabled={isEditing}
+          className="bg-purple-700 hover:bg-purple-800 text-white font-bold px-8 py-3 rounded-md mt-6"
         >
-          Add Group Home
+          {isEditing ? 'Editing...' : 'Edit Resident'}
         </Button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
