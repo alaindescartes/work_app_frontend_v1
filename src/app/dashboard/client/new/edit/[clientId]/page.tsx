@@ -102,17 +102,17 @@ export default function Page() {
     const { name, type } = target;
 
     if (type === 'checkbox') {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: (target as HTMLInputElement).checked,
       }));
     } else if (type === 'file') {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         image_file: (target as HTMLInputElement).files?.[0] ?? null,
       }));
     } else {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: target.value,
       }));
@@ -135,10 +135,10 @@ export default function Page() {
 
     const values = sanitized
       .split(',')
-      .map((item) => item.trim())
-      .filter((item) => item !== '');
+      .map(item => item.trim())
+      .filter(item => item !== '');
 
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: values,
     }));
@@ -152,7 +152,6 @@ export default function Page() {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting resident:', formData);
 
     const requiredFields = [
       'firstName',
@@ -165,7 +164,7 @@ export default function Page() {
 
     let hasError = false;
 
-    requiredFields.forEach((field) => {
+    requiredFields.forEach(field => {
       const input = formRefs.current[field];
       if (input && !input.value.trim()) {
         input.style.borderColor = 'red';
@@ -255,7 +254,7 @@ export default function Page() {
         <div>
           <label className="block text-sm font-semibold">First Name</label>
           <input
-            ref={(el) => {
+            ref={el => {
               formRefs.current['firstName'] = el;
             }}
             type="text"
@@ -268,7 +267,7 @@ export default function Page() {
         <div>
           <label className="block text-sm font-semibold">Last Name</label>
           <input
-            ref={(el) => {
+            ref={el => {
               formRefs.current['lastName'] = el;
             }}
             type="text"
@@ -282,7 +281,7 @@ export default function Page() {
         <div>
           <label className="block text-sm font-semibold">Date of Birth</label>
           <input
-            ref={(el) => {
+            ref={el => {
               formRefs.current['dateOfBirth'] = el;
             }}
             type="date"
@@ -296,7 +295,7 @@ export default function Page() {
         <div>
           <label className="block text-sm font-semibold">Gender</label>
           <select
-            ref={(el) => {
+            ref={el => {
               formRefs.current['gender'] = el;
             }}
             name="gender"
@@ -315,7 +314,7 @@ export default function Page() {
           <label className="block text-sm font-semibold">Primary Diagnosis (comma separated)</label>
           <input
             type="text"
-            onChange={(e) => handleArrayChange(e, 'primaryDiagnosis')}
+            onChange={e => handleArrayChange(e, 'primaryDiagnosis')}
             className="w-full p-2 border rounded"
             placeholder="e.g. Autism, Epilepsy"
           />
@@ -325,7 +324,7 @@ export default function Page() {
           <label className="block text-sm font-semibold">Allergies (comma separated)</label>
           <input
             type="text"
-            onChange={(e) => handleArrayChange(e, 'allergies')}
+            onChange={e => handleArrayChange(e, 'allergies')}
             className="w-full p-2 border rounded"
             placeholder="e.g. Peanuts, Shellfish"
           />
@@ -334,7 +333,7 @@ export default function Page() {
         <div>
           <label className="block text-sm font-semibold">Admission Date</label>
           <input
-            ref={(el) => {
+            ref={el => {
               formRefs.current['admissionDate'] = el;
             }}
             type="date"
@@ -348,7 +347,7 @@ export default function Page() {
         <div>
           <label className="block text-sm font-semibold">Healthcare Number</label>
           <input
-            ref={(el) => {
+            ref={el => {
               formRefs.current['healthcareNumber'] = el;
             }}
             type="text"

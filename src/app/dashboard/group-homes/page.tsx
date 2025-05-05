@@ -7,7 +7,7 @@ import useAuth from '@/lib/hooks/useAuth';
 import { toast } from 'sonner';
 import AdminGrouphoneView from '@/_componets/groupHome/AdminGrouphoneView';
 
-function pages() {
+function Pages() {
   const [adminView, setAdminView] = useState<boolean>(false);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -49,4 +49,4 @@ function pages() {
   );
 }
 
-export default pages;
+export default Pages;
