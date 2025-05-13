@@ -29,41 +29,41 @@ function Task({
   };
 
   return (
-    <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow space-y-4">
-      <h2 className="font-bold text-2xl text-purple-700">Task #{id}</h2>
-      <div className="space-y-2 text-gray-700">
-        <p>
-          <span className="font-semibold text-gray-500">Description:</span>{" "}
-          {description}
-        </p>
-        <p>
-          <span className="font-semibold text-gray-500">Status:</span>{" "}
-          <span
-            className={
-              status === "completed"
-                ? "text-green-600 font-semibold"
-                : "text-yellow-600 font-semibold"
-            }
-          >
-            {status}
-          </span>
-        </p>
-        <div>
-          <label className="font-semibold text-gray-500">Current Time:</label>
-          <input
-            type="datetime-local"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="ml-2 border rounded px-2 py-1"
-          />
-        </div>
-        <button
-          onClick={handleComplete}
-          className="mt-3 inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+    <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow space-y-4 md:space-y-0 md:flex md:items-center md:justify-between md:space-x-4">
+      <h2 className="font-bold text-2xl text-purple-700 md:w-auto">
+        Task #{id}
+      </h2>
+      <p className="text-gray-700 flex-1 break-words">
+        <span className="font-semibold text-gray-500">Description:</span>{" "}
+        {description}
+      </p>
+      <p className="text-gray-700 md:w-auto">
+        <span className="font-semibold text-gray-500">Status:</span>{" "}
+        <span
+          className={
+            status === "completed"
+              ? "text-green-600 font-semibold"
+              : "text-yellow-600 font-semibold"
+          }
         >
-          Mark as Completed
-        </button>
+          {status}
+        </span>
+      </p>
+      <div className="md:w-auto">
+        <label className="font-semibold text-gray-500">Current Time:</label>
+        <input
+          type="datetime-local"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          className="ml-2 border rounded px-2 py-1"
+        />
       </div>
+      <button
+        onClick={handleComplete}
+        className="mt-3 md:mt-0 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+      >
+        Mark as Completed
+      </button>
     </div>
   );
 }
