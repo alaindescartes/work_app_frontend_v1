@@ -1,6 +1,7 @@
 import React from "react";
 import TaskForm from "../forms/TaskForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EditTaskForm from "../forms/EditTaskForm";
 
 function AddTaskWrapper() {
   return (
@@ -14,16 +15,18 @@ function AddTaskWrapper() {
             Add tasks
           </TabsTrigger>
           <TabsTrigger
-            value="password"
+            value="edit"
             className="w-full text-center px-4 py-2 rounded-md data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-700 hover:bg-purple-200 transition"
           >
-            Password
+            Edit tasks
           </TabsTrigger>
         </TabsList>
         <TabsContent value="add-task">
           <TaskForm />
         </TabsContent>
-        <TabsContent value="password">Change your password here.</TabsContent>
+        <TabsContent value="edit">
+          <EditTaskForm />
+        </TabsContent>
       </Tabs>
     </div>
   );
