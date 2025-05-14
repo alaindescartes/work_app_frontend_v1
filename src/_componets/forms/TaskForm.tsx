@@ -55,7 +55,6 @@ function TaskForm() {
   const handleSubmitAll = async () => {
     try {
       setIsSubmitting(true);
-      console.log('Submitting all tasks:', taskList);
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/add-task`, {
         credentials: 'include',
@@ -75,6 +74,7 @@ function TaskForm() {
       if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
         console.log('error submitting tasks', error.message);
       }
+      toast('Could not add Task', { style: { backgroundColor: 'red', color: 'white' } });
       //TODO:log to a logging service
     } finally {
       setIsSubmitting(false);
