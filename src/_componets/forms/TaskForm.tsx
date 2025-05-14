@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TaskInsert } from '@/interfaces/taskInterface';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,12 +8,19 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
+import { ResidentFetch } from '@/interfaces/clientInterface';
+import { json } from 'stream/consumers';
+import { toast } from 'sonner';
 
 function TaskForm() {
   const [formData, setFormData] = useState<Partial<TaskInsert>>({});
   const [taskList, setTaskList] = useState<TaskInsert[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
+  const [homes, setHomes] = useState<GroupHomeFetch[]>([]);
+  const [clients, setClients] = useState<ResidentFetch[]>([]);
+  const isEmpty = (obj: object) => Object.keys(obj).length === 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,16 +52,84 @@ function TaskForm() {
     setErrors({});
   };
 
-  const handleSubmitAll = () => {
-    setIsSubmitting(true);
-    console.log('Submitting all tasks:', taskList);
+  const handleSubmitAll = async () => {
+    try {
+      setIsSubmitting(true);
+      console.log('Submitting all tasks:', taskList);
 
-    // TODO: replace with real API request
-    setTimeout(() => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/add-task`, {
+        credentials: 'include',
+        method: 'POST',
+        body: JSON.stringify(taskList),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        setFormData({});
+        setTaskList([]);
+        toast('Task added Successfully', { style: { backgroundColor: 'green', color: 'white' } });
+      }
+    } catch (error: any) {
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error submitting tasks', error.message);
+      }
+      //TODO:log to a logging service
+    } finally {
       setIsSubmitting(false);
-      setTaskList([]);
-    }, 1000);
+    }
   };
+
+  const getClientForHome = async (value: string) => {
+    setFormData((prev) => ({ ...prev, groupHomeId: Number(value), residentId: undefined }));
+
+    //fetch residents associated to a home
+    try {
+      const residents = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/find-residents/${value}`,
+        {
+          credentials: 'include',
+          method: 'GET',
+        }
+      );
+      if (residents.ok) {
+        const data = await residents.json();
+        setClients(data.residentsData);
+      }
+    } catch (error: any) {
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error adding tasks', error.message);
+      }
+      //TODO:log to a logging service
+    }
+  };
+
+  useEffect(() => {
+    const fetchAllHomes = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grouphome-route/get-grouphomes`,
+          {
+            credentials: 'include',
+            method: 'GET',
+          }
+        );
+
+        if (res.ok) {
+          const allHomes = await res.json();
+          setHomes(allHomes.groupHomes);
+        }
+      } catch (error: any) {
+        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+          console.log('error adding tasks', error.message);
+        }
+        //TODO:log to a logging service
+      }
+    };
+
+    fetchAllHomes();
+  }, []);
 
   return (
     <div>
@@ -88,9 +163,7 @@ function TaskForm() {
           </label>
           <Select
             value={formData.groupHomeId?.toString() || ''}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, groupHomeId: Number(value) }))
-            }
+            onValueChange={(value) => getClientForHome(value)}
           >
             <SelectTrigger
               className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 shadow-sm ${
@@ -102,9 +175,11 @@ function TaskForm() {
               <SelectValue placeholder="Select a Group Home" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Home 1</SelectItem>
-              <SelectItem value="2">Home 2</SelectItem>
-              <SelectItem value="3">Home 3</SelectItem>
+              {homes.map((home) => (
+                <SelectItem value={home.id.toString()} key={home.id}>
+                  {home.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -124,9 +199,11 @@ function TaskForm() {
               <SelectValue placeholder="Select a Resident (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="9">Resident A</SelectItem>
-              <SelectItem value="10">Resident B</SelectItem>
-              <SelectItem value="11">Resident C</SelectItem>
+              {clients.map((client) => (
+                <SelectItem value={client.id.toString()} key={client.id}>
+                  {client.firstName} {client.lastName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -134,7 +211,7 @@ function TaskForm() {
         {/* Add Task Button */}
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isEmpty(errors)}
           className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer"
         >
           Add Task
@@ -147,7 +224,7 @@ function TaskForm() {
           disabled={isSubmitting || taskList.length === 0}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer"
         >
-          Submit All Tasks
+          {isSubmitting ? 'Submitting' : 'Submit All Tasks'}
         </Button>
 
         {/* Display added tasks */}
