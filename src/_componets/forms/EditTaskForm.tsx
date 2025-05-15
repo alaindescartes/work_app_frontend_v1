@@ -11,14 +11,18 @@ import {
 import { useEffect } from "react";
 import { GroupHomeFetch } from "@/interfaces/groupHomeInterface";
 import { ResidentFetch } from "@/interfaces/clientInterface";
-import Link from "next/link";
 import { toast } from "sonner";
-
-const dummyTask: Partial<TaskInsert> = {
-  description: "Sweep common area",
-  groupHomeId: 2,
-  residentId: 10,
-};
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function EditTaskForm() {
   const [formData, setFormData] = useState<Partial<TaskInsert>>({});
@@ -142,6 +146,35 @@ function EditTaskForm() {
     } catch (error: any) {
       if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
         console.log("error adding tasks", error.message);
+      }
+      //TODO:log to a logging service
+    }
+  };
+
+  const handleDeleteTask = async (id: number) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/delete-task/${id}`,
+        {
+          credentials: "include",
+          method: "DELETE",
+        }
+      );
+
+      if (res.ok) {
+        toast("successfully Deleted this task", {
+          style: { backgroundColor: "green", color: "white" },
+        });
+        if (formData.groupHomeId) {
+          await getTaskByHome(String(formData.groupHomeId));
+        }
+      }
+    } catch (error: any) {
+      toast(error.message || "could not delete this message", {
+        style: { backgroundColor: "red", color: "white" },
+      });
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
+        console.log("error deleting tasks", error.message);
       }
       //TODO:log to a logging service
     }
@@ -348,12 +381,35 @@ function EditTaskForm() {
                   >
                     Edit
                   </button>
-                  <Button
-                    variant="destructive"
-                    className="text-sm px-3 py-1 h-auto"
-                  >
-                    Delete
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        className="text-sm px-3 py-1 h-auto"
+                      >
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete this and remove it from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteTask(task.id)}
+                        >
+                          Continue
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ) : null
