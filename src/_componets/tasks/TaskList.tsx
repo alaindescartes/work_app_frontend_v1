@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState, useCallback } from "react";
 import Task from "./Task";
 import {
@@ -109,36 +110,22 @@ function TaskList({ flag }: TaskListProps) {
         }
         return { ...prev, [taskId]: newStatus };
       });
-
-      // sync completedTask list
-      setCompletedTask((prev) => {
-        const idx = prev.findIndex((t) => t.id === taskId);
-
-        if (newStatus === "completed") {
-          if (idx !== -1) return prev; // already stored
-          const fullTask = tasks.find((t) => t.id === taskId);
-          if (!fullTask) return prev;
-          return [
-            ...prev,
-            {
-              ...fullTask,
-              completedAt: fullTask.completedAt || new Date().toISOString(),
-            } as CompletedTask,
-          ];
-        }
-
-        // any status other than completed removes from the list
-        return idx === -1 ? prev : prev.filter((t) => t.id !== taskId);
-      });
     },
-    [tasks]
+    []
   );
 
   const handleCompleteTask = (task: CompletedTask) => {
     setCompletedTask((prev) => {
-      // don't push duplicates
-      if (prev.some((t) => t.id === task.id)) return prev;
-      return [...prev, task];
+      const idx = prev.findIndex((t) => t.id === task.id);
+
+      // If the task reverted to pending, remove it from the list
+      if (task.status === "pending") {
+        return idx === -1 ? prev : prev.filter((t) => t.id !== task.id);
+      }
+
+      // For completed or not‑done, insert or update
+      if (idx === -1) return [...prev, task];
+      return prev.map((t) => (t.id === task.id ? task : t));
     });
   };
 

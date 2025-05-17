@@ -1,3 +1,4 @@
+"use client";
 import { CompletedTask } from "@/interfaces/taskInterface";
 import { RootState } from "@/redux/store";
 import React, { useState } from "react";
@@ -54,6 +55,9 @@ function Task({
     // tell parent to update visual status map
     onStatusChange(nextStatus);
 
+    console.log("clicked"); // ← should always print
+    console.log("staffId:", staffId);
+
     // Build a CompletedTask payload representing the new state
     const payload: CompletedTask = {
       id,
@@ -62,7 +66,7 @@ function Task({
       residentId: residentId ?? undefined,
       status: nextStatus, // ← actual status (includes "not-done")
       completedAt: nextStatus === "pending" ? undefined : time,
-      completedBy: staffId ?? 0,
+      completedBy: Number(staffId) ?? 0,
       createdAt,
       updatedAt,
       reason: nextStatus === "not-done" ? reason : undefined,
