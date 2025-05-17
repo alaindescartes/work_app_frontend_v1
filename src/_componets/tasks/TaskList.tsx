@@ -1,124 +1,160 @@
-import React from "react";
-import Task from "./Task";
+import React, { useEffect, useState } from 'react';
+import Task from './Task';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-
-const dummyGroupHomes = [
-  { id: 101, name: "Sunrise Group Home" },
-  { id: 102, name: "Harmony Group Home" },
-];
-
-const dummyResidents = [{ id: 5, name: "Resident A" }];
-
-const dummyTasks = [
-  {
-    id: 1,
-    description: "Clean the common area",
-    groupHomeId: 101,
-    residentId: null,
-    status: "pending" as "pending" | "completed",
-    completedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    description: "Administer medication to Resident A",
-    groupHomeId: 101,
-    residentId: 5,
-    status: "completed" as "pending" | "completed",
-    completedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    description: "Prepare lunch",
-    groupHomeId: 102,
-    residentId: null,
-    status: "pending" as "pending" | "completed",
-    completedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+} from '@/components/ui/accordion';
+import { Task as TaskFetch } from '@/interfaces/taskInterface';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { ResidentFetch } from '@/interfaces/clientInterface';
 
 function TaskList() {
-  const tasksByGroupHome = dummyGroupHomes.map((home) => ({
-    ...home,
-    tasks: dummyTasks.filter(
-      (task) => task.groupHomeId === home.id && !task.residentId
-    ),
-  }));
+  const [tasks, setTasks] = useState<TaskFetch>({
+    completedAt: '',
+    completedBy: 0,
+    createdAt: '',
+    description: '',
+    groupHomeId: 0,
+    id: 0,
+    residentId: 0,
+    status: 'pending',
+    updatedAt: '',
+  });
+  const [clients, setClients] = useState<ResidentFetch[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const currentGroupHomeId = useSelector(
+    (state: RootState) => state.reducer.grouphome.grouphomeInfo.id
+  );
+  const currentGroupHomeName = useSelector(
+    (state: RootState) => state.reducer.grouphome.grouphomeInfo.name
+  );
 
-  const tasksByResident = dummyResidents.map((resident) => ({
-    ...resident,
-    tasks: dummyTasks.filter((task) => task.residentId === resident.id),
-  }));
+  const getClientForHome = async (value: string) => {
+    //fetch residents associated to a home
+    try {
+      const residents = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/find-residents/${value}`,
+        {
+          credentials: 'include',
+          method: 'GET',
+        }
+      );
+      if (residents.ok) {
+        const data = await residents.json();
+        setClients(data.residentsData);
+      }
+    } catch (error: any) {
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error adding tasks', error.message);
+      }
+      //TODO:log to a logging service
+    }
+  };
+  useEffect(() => {
+    const fetchTasksPerHome = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/all-GroupHome-task/${currentGroupHomeId}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setTasks(data.tasks);
+          await getClientForHome(currentGroupHomeId.toString());
+          console.log(data.tasks);
+        }
+      } catch (e: any) {
+        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+          console.log(e.message);
+        }
+        //TODO:log data to data system
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasksPerHome();
+  }, [currentGroupHomeId]);
 
   return (
     <div className="space-y-6">
-      <Accordion type="multiple">
-        {tasksByGroupHome.map((home) => (
-          <AccordionItem key={home.id} value={`home-${home.id}`}>
-            <AccordionTrigger className="text-lg font-semibold">
-              {home.name}
-            </AccordionTrigger>
-            <AccordionContent>
-              {home.tasks.length > 0 ? (
-                home.tasks.map((task) => (
-                  <Task
-                    key={task.id}
-                    id={task.id}
-                    description={task.description}
-                    groupHomeId={task.groupHomeId}
-                    residentId={task.residentId}
-                    status={task.status}
-                    completedAt={task.completedAt}
-                    createdAt={task.createdAt}
-                    updatedAt={task.updatedAt}
-                  />
-                ))
-              ) : (
-                <p className="text-gray-500">No tasks available.</p>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 animate-pulse rounded-lg" />
+          ))}
+        </div>
+      ) : (
+        <Accordion type="multiple">
+          {clients.map((client) => {
+            const clientTasks = Array.isArray(tasks)
+              ? tasks.filter((task) => task.residentId === client.id)
+              : [];
 
-      <Accordion type="multiple">
-        {tasksByResident.map((resident) => (
-          <AccordionItem key={resident.id} value={`resident-${resident.id}`}>
+            return (
+              <AccordionItem key={client.id} value={`resident-${client.id}`}>
+                <AccordionTrigger className="text-lg font-semibold">
+                  {client.firstName} {client.lastName}
+                </AccordionTrigger>
+                <AccordionContent>
+                  {clientTasks.length > 0 ? (
+                    clientTasks.map((task) => (
+                      <Task
+                        key={task.id}
+                        id={task.id}
+                        description={task.description}
+                        groupHomeId={task.groupHomeId}
+                        residentId={task.residentId}
+                        status={task.status}
+                        completedAt={task.completedAt}
+                        createdAt={task.createdAt}
+                        updatedAt={task.updatedAt}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No tasks available.</p>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+
+          <AccordionItem key="general-home-tasks" value="general-home">
             <AccordionTrigger className="text-lg font-semibold">
-              {resident.name}
+              {currentGroupHomeName || 'Group Home Tasks'}
             </AccordionTrigger>
             <AccordionContent>
-              {resident.tasks.length > 0 ? (
-                resident.tasks.map((task) => (
-                  <Task
-                    key={task.id}
-                    id={task.id}
-                    description={task.description}
-                    groupHomeId={task.groupHomeId}
-                    residentId={task.residentId}
-                    status={task.status}
-                    completedAt={task.completedAt}
-                    createdAt={task.createdAt}
-                    updatedAt={task.updatedAt}
-                  />
-                ))
+              {Array.isArray(tasks) && tasks.filter((task) => !task.residentId).length > 0 ? (
+                tasks
+                  .filter((task) => !task.residentId)
+                  .map((task) => (
+                    <Task
+                      key={task.id}
+                      id={task.id}
+                      description={task.description}
+                      groupHomeId={task.groupHomeId}
+                      residentId={task.residentId}
+                      status={task.status}
+                      completedAt={task.completedAt}
+                      createdAt={task.createdAt}
+                      updatedAt={task.updatedAt}
+                    />
+                  ))
               ) : (
-                <p className="text-gray-500">No tasks available.</p>
+                <p className="text-gray-500">No general tasks available.</p>
               )}
             </AccordionContent>
           </AccordionItem>
-        ))}
-      </Accordion>
+        </Accordion>
+      )}
     </div>
   );
 }
