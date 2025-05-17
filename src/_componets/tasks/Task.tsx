@@ -1,18 +1,20 @@
-import { CompletedTask } from '@/interfaces/taskInterface';
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import { CompletedTask } from "@/interfaces/taskInterface";
+import { RootState } from "@/redux/store";
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
 
 type TaskProps = {
   id: number;
   description: string;
   groupHomeId: number;
   residentId?: number | null;
-  status: 'pending' | 'completed';
+  // status: "pending" | "completed";
   completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  statusState: "pending" | "completed" | "not-done";
+  onStatusChange: (status: "pending" | "completed" | "not-done") => void;
   onComplete: (task: CompletedTask) => void;
-  statusState: string;
 };
 
 function Task({
@@ -20,10 +22,12 @@ function Task({
   description,
   groupHomeId,
   residentId,
-  status,
+  // status,
   completedAt,
   createdAt,
   updatedAt,
+  statusState,
+  onStatusChange,
   onComplete,
 }: TaskProps) {
   const [time, setTime] = useState(() => {
@@ -33,39 +37,46 @@ function Task({
     return local.toISOString().slice(0, 16);
   });
 
-  const [statusState, setStatusState] = useState<'pending' | 'completed' | 'not-done'>('pending');
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
+  const staffId = useSelector(
+    (state: RootState) => state.reducer.user.userInfo.staffId
+  );
 
   const handleComplete = () => {
+    // cycle status: pending → completed → not‑done → pending …
     const nextStatus =
-      statusState === 'pending'
-        ? 'completed'
-        : statusState === 'completed'
-          ? 'not-done'
-          : 'pending';
+      statusState === "pending"
+        ? "completed"
+        : statusState === "completed"
+        ? "not-done"
+        : "pending";
 
-    setStatusState(nextStatus);
+    // tell parent to update visual status map
+    onStatusChange(nextStatus);
 
-    if (nextStatus === 'completed' || nextStatus === 'not-done') {
-      onComplete({
-        id,
-        description,
-        groupHomeId,
-        residentId: residentId ?? undefined,
-        status: nextStatus === 'not-done' ? 'pending' : 'completed',
-        completedAt: time,
-        completedBy: 0, // Replace with actual staff ID if available
-        createdAt,
-        updatedAt,
-        reason: nextStatus === 'not-done' ? reason : '',
-      });
-    }
+    // Build a CompletedTask payload representing the new state
+    const payload: CompletedTask = {
+      id,
+      description,
+      groupHomeId,
+      residentId: residentId ?? undefined,
+      status: nextStatus, // ← actual status (includes "not-done")
+      completedAt: nextStatus === "pending" ? undefined : time,
+      completedBy: staffId ?? 0,
+      createdAt,
+      updatedAt,
+      reason: nextStatus === "not-done" ? reason : undefined,
+    };
+
+    onComplete(payload);
   };
 
   return (
     <div className="p-5 bg-white border border-gray-300 rounded-xl shadow-sm hover:shadow-md transition space-y-5">
       <div className="flex flex-col space-y-1">
-        <span className="text-sm text-gray-500 font-medium">Task Description</span>
+        <span className="text-sm text-gray-500 font-medium">
+          Task Description
+        </span>
         <p className="text-base text-gray-800 font-semibold">{description}</p>
       </div>
 
@@ -74,17 +85,20 @@ function Task({
           <span className="text-sm text-gray-500 font-medium">Status</span>
           <span
             className={`text-sm font-semibold w-fit px-3 py-1 rounded-full ${
-              status === 'completed'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-yellow-100 text-yellow-700'
+              statusState === "completed"
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700"
             }`}
           >
-            {status}
+            {statusState}
           </span>
         </div>
 
         <div className="flex flex-col space-y-1">
-          <label htmlFor={`completed-time-${id}`} className="text-sm text-gray-500 font-medium">
+          <label
+            htmlFor={`completed-time-${id}`}
+            className="text-sm text-gray-500 font-medium"
+          >
             Completed Time
           </label>
           <input
@@ -98,7 +112,7 @@ function Task({
       </div>
 
       <div className="flex flex-col items-end space-y-3">
-        {statusState === 'not-done' && (
+        {statusState === "not-done" && (
           <input
             type="text"
             placeholder="Enter reason for not completing"
@@ -110,18 +124,18 @@ function Task({
         <button
           onClick={handleComplete}
           className={`${
-            statusState === 'completed'
-              ? 'bg-green-600 hover:bg-green-700'
-              : statusState === 'not-done'
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-purple-600 hover:bg-purple-700'
+            statusState === "completed"
+              ? "bg-green-600 hover:bg-green-700"
+              : statusState === "not-done"
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-purple-600 hover:bg-purple-700"
           } text-white px-5 py-2 rounded-md text-sm font-medium transition`}
         >
-          {statusState === 'completed'
-            ? 'Completed'
-            : statusState === 'not-done'
-              ? 'Not Done'
-              : 'Mark as Done'}
+          {statusState === "completed"
+            ? "Completed"
+            : statusState === "not-done"
+            ? "Not Done"
+            : "Mark as Done"}
         </button>
       </div>
     </div>
