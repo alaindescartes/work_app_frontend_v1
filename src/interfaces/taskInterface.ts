@@ -1,7 +1,7 @@
 export interface Task {
   id: number;
   description: string;
-  status: 'pending' | 'completed';
+  status: "pending" | "completed" | "not-done";
   groupHomeId: number;
   residentId?: number;
   completedAt?: string;
@@ -13,7 +13,7 @@ export interface Task {
 export interface CompletedTask {
   id: number;
   description: string;
-  status: 'pending' | 'completed';
+  status: "pending" | "completed" | "not-done";
   groupHomeId: number;
   residentId?: number;
   completedAt?: string;
@@ -23,4 +23,7 @@ export interface CompletedTask {
   reason?: string;
 }
 
-export type TaskInsert = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'completedBy'>;
+export type TaskInsert = Omit<
+  Task,
+  "id" | "createdAt" | "updatedAt" | "completedBy"
+>;

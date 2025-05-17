@@ -28,6 +28,13 @@ export default function Page() {
   const role = useAuth().user.role;
   const [adminView, setAdminView] = useState<boolean>(false);
   const [ClientIdToDelete, setClientIdToDelete] = useState<string | null>(null);
+  const [isUnsavedChanges, setIsUnsavedChanges] = useState<boolean>(false);
+
+  const handleUnsavedChanges = (unsaved: boolean) => {
+    setIsUnsavedChanges(unsaved);
+  };
+
+  const [activeTab, setActiveTab] = useState<"clients" | "other">("clients");
 
   useEffect(() => {
     dispatch(resetGrouphomeInfo());
@@ -149,7 +156,22 @@ export default function Page() {
       </div>
 
       {/* tab for client list */}
-      <Tabs defaultValue="clients" className="w-full">
+      <Tabs
+        value={activeTab}
+        className="w-full"
+        onValueChange={(value) => {
+          if (isUnsavedChanges && value !== activeTab) {
+            toast(
+              "You have unsaved changes. Save or discard them before switching tabs.",
+              {
+                style: { backgroundColor: "orange", color: "white" },
+              }
+            );
+            return;
+          }
+          setActiveTab(value as "clients" | "other");
+        }}
+      >
         <TabsList className="bg-gray-100 rounded-lg p-1 flex space-x-2 mb-6 justify-center">
           <TabsTrigger
             value="clients"
@@ -172,7 +194,7 @@ export default function Page() {
           />
         </TabsContent>
         <TabsContent value="other">
-          <TaskList />
+          <TaskList flag={handleUnsavedChanges} />
         </TabsContent>
       </Tabs>
     </div>

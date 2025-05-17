@@ -1,30 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import Task from './Task';
+import React, { useEffect, useState, useCallback } from "react";
+import Task from "./Task";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { CompletedTask, Task as TaskFetch } from '@/interfaces/taskInterface';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
-import { ResidentFetch } from '@/interfaces/clientInterface';
+} from "@/components/ui/accordion";
+import { CompletedTask, Task as TaskFetch } from "@/interfaces/taskInterface";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { ResidentFetch } from "@/interfaces/clientInterface";
 
-function TaskList() {
-  const [tasks, setTasks] = useState<TaskFetch>({
-    completedAt: '',
-    completedBy: 0,
-    createdAt: '',
-    description: '',
-    groupHomeId: 0,
-    id: 0,
-    residentId: 0,
-    status: 'pending',
-    updatedAt: '',
-  });
+interface TaskListProps {
+  flag: (hasUnsaved: boolean) => void;
+}
+
+function TaskList({ flag }: TaskListProps) {
+  const [tasks, setTasks] = useState<TaskFetch[]>([]);
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [taskStatuses, setTaskStatuses] = useState<
+    Record<number, "pending" | "completed" | "not-done">
+  >({});
+
   const currentGroupHomeId = useSelector(
     (state: RootState) => state.reducer.grouphome.grouphomeInfo.id
   );
@@ -33,14 +31,18 @@ function TaskList() {
   );
   const [completedTask, setCompletedTask] = useState<CompletedTask[]>([]);
 
+  useEffect(() => {
+    console.log("CompletedTask: ", completedTask);
+  }, [completedTask]);
+
   const getClientForHome = async (value: string) => {
     //fetch residents associated to a home
     try {
       const residents = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/find-residents/${value}`,
         {
-          credentials: 'include',
-          method: 'GET',
+          credentials: "include",
+          method: "GET",
         }
       );
       if (residents.ok) {
@@ -48,8 +50,8 @@ function TaskList() {
         setClients(data.residentsData);
       }
     } catch (error: any) {
-      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-        console.log('error adding tasks', error.message);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
+        console.log("error adding tasks", error.message);
       }
       //TODO:log to a logging service
     }
@@ -61,19 +63,32 @@ function TaskList() {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/all-GroupHome-task/${currentGroupHomeId}`,
           {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
           }
         );
         if (res.ok) {
           const data = await res.json();
           setTasks(data.tasks);
+          // initialise status map for each fetched task
+          const statusMap: Record<
+            number,
+            "pending" | "completed" | "not-done"
+          > = {};
+          if (Array.isArray(data.tasks)) {
+            data.tasks.forEach((t: TaskFetch) => {
+              statusMap[t.id] = t.status as
+                | "pending"
+                | "completed"
+                | "not-done";
+            });
+          }
+          setTaskStatuses(statusMap);
           await getClientForHome(currentGroupHomeId.toString());
-          console.log(data.tasks);
         }
       } catch (e: any) {
-        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
           console.log(e.message);
         }
         //TODO:log data to data system
@@ -85,20 +100,69 @@ function TaskList() {
     fetchTasksPerHome();
   }, [currentGroupHomeId]);
 
+  const handleStatusChange = useCallback(
+    (taskId: number, newStatus: "pending" | "completed" | "not-done") => {
+      setTaskStatuses((prev) => {
+        if (newStatus === "pending") {
+          const { [taskId]: _omit, ...rest } = prev;
+          return rest; // remove key
+        }
+        return { ...prev, [taskId]: newStatus };
+      });
+
+      // sync completedTask list
+      setCompletedTask((prev) => {
+        const idx = prev.findIndex((t) => t.id === taskId);
+
+        if (newStatus === "completed") {
+          if (idx !== -1) return prev; // already stored
+          const fullTask = tasks.find((t) => t.id === taskId);
+          if (!fullTask) return prev;
+          return [
+            ...prev,
+            {
+              ...fullTask,
+              completedAt: fullTask.completedAt || new Date().toISOString(),
+            } as CompletedTask,
+          ];
+        }
+
+        // any status other than completed removes from the list
+        return idx === -1 ? prev : prev.filter((t) => t.id !== taskId);
+      });
+    },
+    [tasks]
+  );
+
   const handleCompleteTask = (task: CompletedTask) => {
-    setCompletedTask((prev) => [...prev, task]);
+    setCompletedTask((prev) => {
+      // don't push duplicates
+      if (prev.some((t) => t.id === task.id)) return prev;
+      return [...prev, task];
+    });
   };
 
+  /*
+   * Unsaved changes exist when *any* task in `taskStatuses`
+   * has a status other than "pending".
+   */
+  const hasNonPending = Object.values(taskStatuses).some(
+    (s) => s !== "pending"
+  );
+
   useEffect(() => {
-    console.log(completedTask);
-  }, [completedTask]);
+    flag(hasNonPending); // true blocks tab_switching
+  }, [hasNonPending, flag]);
 
   return (
     <div className="space-y-6">
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 animate-pulse rounded-lg" />
+            <div
+              key={i}
+              className="h-24 bg-gray-200 animate-pulse rounded-lg"
+            />
           ))}
         </div>
       ) : (
@@ -122,7 +186,10 @@ function TaskList() {
                         description={task.description}
                         groupHomeId={task.groupHomeId}
                         residentId={task.residentId}
-                        status={task.status}
+                        statusState={taskStatuses[task.id] ?? "pending"}
+                        onStatusChange={(newStatus) =>
+                          handleStatusChange(task.id, newStatus)
+                        }
                         completedAt={task.completedAt}
                         createdAt={task.createdAt}
                         updatedAt={task.updatedAt}
@@ -139,10 +206,11 @@ function TaskList() {
 
           <AccordionItem key="general-home-tasks" value="general-home">
             <AccordionTrigger className="text-lg font-semibold">
-              {currentGroupHomeName || 'Group Home Tasks'}
+              {currentGroupHomeName || "Group Home Tasks"}
             </AccordionTrigger>
             <AccordionContent>
-              {Array.isArray(tasks) && tasks.filter((task) => !task.residentId).length > 0 ? (
+              {Array.isArray(tasks) &&
+              tasks.filter((task) => !task.residentId).length > 0 ? (
                 tasks
                   .filter((task) => !task.residentId)
                   .map((task) => (
@@ -152,7 +220,10 @@ function TaskList() {
                       description={task.description}
                       groupHomeId={task.groupHomeId}
                       residentId={task.residentId}
-                      status={task.status}
+                      statusState={taskStatuses[task.id] ?? "pending"}
+                      onStatusChange={(newStatus) =>
+                        handleStatusChange(task.id, newStatus)
+                      }
                       completedAt={task.completedAt}
                       createdAt={task.createdAt}
                       updatedAt={task.updatedAt}
