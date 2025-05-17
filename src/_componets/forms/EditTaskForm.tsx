@@ -377,7 +377,7 @@ function EditTaskForm() {
                       setFormData(task);
                       setMadeChoice(true);
                     }}
-                    className="text-sm text-blue-600 hover:underline font-semibold"
+                    className="text-sm text-blue-600 hover:underline font-semibold cursor-pointer"
                   >
                     Edit
                   </button>
@@ -385,7 +385,7 @@ function EditTaskForm() {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
-                        className="text-sm px-3 py-1 h-auto"
+                        className="text-sm px-3 py-1 h-auto cursor-pointer"
                       >
                         Delete
                       </Button>
