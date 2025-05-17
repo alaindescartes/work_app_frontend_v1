@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Task as TaskFetch } from '@/interfaces/taskInterface';
+import { CompletedTask, Task as TaskFetch } from '@/interfaces/taskInterface';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { ResidentFetch } from '@/interfaces/clientInterface';
@@ -31,6 +31,7 @@ function TaskList() {
   const currentGroupHomeName = useSelector(
     (state: RootState) => state.reducer.grouphome.grouphomeInfo.name
   );
+  const [completedTask, setCompletedTask] = useState<CompletedTask[]>([]);
 
   const getClientForHome = async (value: string) => {
     //fetch residents associated to a home
@@ -84,6 +85,14 @@ function TaskList() {
     fetchTasksPerHome();
   }, [currentGroupHomeId]);
 
+  const handleCompleteTask = (task: CompletedTask) => {
+    setCompletedTask((prev) => [...prev, task]);
+  };
+
+  useEffect(() => {
+    console.log(completedTask);
+  }, [completedTask]);
+
   return (
     <div className="space-y-6">
       {isLoading ? (
@@ -117,6 +126,7 @@ function TaskList() {
                         completedAt={task.completedAt}
                         createdAt={task.createdAt}
                         updatedAt={task.updatedAt}
+                        onComplete={handleCompleteTask}
                       />
                     ))
                   ) : (
@@ -146,6 +156,7 @@ function TaskList() {
                       completedAt={task.completedAt}
                       createdAt={task.createdAt}
                       updatedAt={task.updatedAt}
+                      onComplete={handleCompleteTask}
                     />
                   ))
               ) : (
