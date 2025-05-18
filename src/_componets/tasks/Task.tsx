@@ -55,9 +55,6 @@ function Task({
     // tell parent to update visual status map
     onStatusChange(nextStatus);
 
-    console.log("clicked"); // ← should always print
-    console.log("staffId:", staffId);
-
     // Build a CompletedTask payload representing the new state
     const payload: CompletedTask = {
       id,
