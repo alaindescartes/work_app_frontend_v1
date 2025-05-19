@@ -34,9 +34,9 @@ function TaskList({ flag }: TaskListProps) {
   const [completedTask, setCompletedTask] = useState<CompletedTask[]>([]);
   const [currentCompletedTask, setCurrentCompletedTask] = useState<CompletedTask[]>([]);
 
-  // IDs of tasks already completed today
+  // IDs of tasks already completed today (by template taskId)
   const completedIds = React.useMemo(
-    () => new Set(currentCompletedTask.map(t => t.id)),
+    () => new Set(currentCompletedTask.map((t) => t.taskId)),
     [currentCompletedTask]
   );
 
@@ -155,7 +155,7 @@ function TaskList({ flag }: TaskListProps) {
 
   const handleStatusChange = useCallback(
     (taskId: number, newStatus: 'pending' | 'completed' | 'not-done') => {
-      setTaskStatuses(prev => {
+      setTaskStatuses((prev) => {
         if (newStatus === 'pending') {
           const { [taskId]: _omit, ...rest } = prev;
           return rest; // remove key
@@ -167,17 +167,17 @@ function TaskList({ flag }: TaskListProps) {
   );
 
   const handleCompleteTask = (task: CompletedTask) => {
-    setCompletedTask(prev => {
-      const idx = prev.findIndex(t => t.id === task.id);
+    setCompletedTask((prev) => {
+      const idx = prev.findIndex((t) => t.taskId === task.taskId);
 
-      // If the task reverted to pending, remove it from the list
+      // If the task reverted to pending, remove it
       if (task.status === 'pending') {
-        return idx === -1 ? prev : prev.filter(t => t.id !== task.id);
+        return idx === -1 ? prev : prev.filter((t) => t.taskId !== task.taskId);
       }
 
-      // For completed or not‑done, insert or update
+      // For completed / not‑done, insert or update by taskId
       if (idx === -1) return [...prev, task];
-      return prev.map(t => (t.id === task.id ? task : t));
+      return prev.map((t) => (t.taskId === task.taskId ? task : t));
     });
   };
 
@@ -185,7 +185,7 @@ function TaskList({ flag }: TaskListProps) {
    * Unsaved changes exist when *any* task in `taskStatuses`
    * has a status other than "pending".
    */
-  const hasNonPending = Object.values(taskStatuses).some(s => s !== 'pending');
+  const hasNonPending = Object.values(taskStatuses).some((s) => s !== 'pending');
 
   useEffect(() => {
     flag(hasNonPending); // true blocks tab_switching
@@ -211,9 +211,9 @@ function TaskList({ flag }: TaskListProps) {
         </div>
       ) : (
         <Accordion type="multiple">
-          {clients.map(client => {
+          {clients.map((client) => {
             const clientTasks = Array.isArray(tasks)
-              ? tasks.filter(task => task.residentId === client.id && !completedIds.has(task.id))
+              ? tasks.filter((task) => task.residentId === client.id && !completedIds.has(task.id))
               : [];
 
             return (
@@ -223,7 +223,7 @@ function TaskList({ flag }: TaskListProps) {
                 </AccordionTrigger>
                 <AccordionContent>
                   {clientTasks.length > 0 ? (
-                    clientTasks.map(task => (
+                    clientTasks.map((task) => (
                       <Task
                         key={task.id}
                         id={task.id}
@@ -231,7 +231,7 @@ function TaskList({ flag }: TaskListProps) {
                         groupHomeId={task.groupHomeId}
                         residentId={task.residentId}
                         statusState={taskStatuses[task.id] ?? 'pending'}
-                        onStatusChange={newStatus => handleStatusChange(task.id, newStatus)}
+                        onStatusChange={(newStatus) => handleStatusChange(task.id, newStatus)}
                         completedAt={task.completedAt}
                         createdAt={task.createdAt}
                         updatedAt={task.updatedAt}
@@ -252,10 +252,10 @@ function TaskList({ flag }: TaskListProps) {
             </AccordionTrigger>
             <AccordionContent>
               {Array.isArray(tasks) &&
-              tasks.filter(task => !task.residentId && !completedIds.has(task.id)).length > 0 ? (
+              tasks.filter((task) => !task.residentId && !completedIds.has(task.id)).length > 0 ? (
                 tasks
-                  .filter(task => !task.residentId && !completedIds.has(task.id))
-                  .map(task => (
+                  .filter((task) => !task.residentId && !completedIds.has(task.id))
+                  .map((task) => (
                     <Task
                       key={task.id}
                       id={task.id}
@@ -263,7 +263,7 @@ function TaskList({ flag }: TaskListProps) {
                       groupHomeId={task.groupHomeId}
                       residentId={task.residentId}
                       statusState={taskStatuses[task.id] ?? 'pending'}
-                      onStatusChange={newStatus => handleStatusChange(task.id, newStatus)}
+                      onStatusChange={(newStatus) => handleStatusChange(task.id, newStatus)}
                       completedAt={task.completedAt}
                       createdAt={task.createdAt}
                       updatedAt={task.updatedAt}

@@ -55,15 +55,13 @@ function Task({
 
     // Build a CompletedTask payload representing the new state
     const payload: CompletedTask = {
-      id,
+      taskId: id, // template task ID
       description,
       groupHomeId,
       residentId: residentId ?? undefined,
-      status: nextStatus, // ← actual status (includes "not-done")
+      status: nextStatus as 'pending' | 'completed' | 'not-done',
       completedAt: nextStatus === 'pending' ? undefined : time,
       completedBy: Number(staffId) ?? 0,
-      createdAt,
-      updatedAt,
       reason: nextStatus === 'not-done' ? reason : undefined,
     };
 
@@ -99,7 +97,7 @@ function Task({
             id={`completed-time-${id}`}
             type="datetime-local"
             value={time}
-            onChange={e => setTime(e.target.value)}
+            onChange={(e) => setTime(e.target.value)}
             className="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
           />
         </div>
@@ -111,7 +109,7 @@ function Task({
             type="text"
             placeholder="Enter reason for not completing"
             value={reason}
-            onChange={e => setReason(e.target.value)}
+            onChange={(e) => setReason(e.target.value)}
             className="w-full border border-red-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         )}
