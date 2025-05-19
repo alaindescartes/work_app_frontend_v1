@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface ScheduleFormProps {
   /** Called with the array of schedules after successful submit */
@@ -106,7 +107,9 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
     <>
       {savedSchedules.length > 0 && (
         <span className="block text-sm text-purple-700 mb-2">
-          Saved drafts: {savedSchedules.length}
+          <Badge variant="default" className="bg-green-800 text-white font-bold">
+            Saved:{savedSchedules.length}
+          </Badge>
         </span>
       )}
       <form onSubmit={handleSubmit} className="w-full h-full overflow-y-auto space-y-8 p-4">
@@ -141,11 +144,9 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <span className="text-purple-600">Group Home ID</span>
                 <input
                   type="number"
-                  disabled={true}
+                  readOnly
                   value={groupHomeId}
-                  onChange={(e) => updateField(idx, 'groupHomeId', Number(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
-                  required
                 />
               </label>
             </div>
