@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Edit_RemoveGroupHome from '@/_componets/groupHome/Edit_RemoveGroupHome';
-import AddTaskWrapper from '../task/AddTaskWrapper';
+import AddTaskWrapper from '../tasks/AddTaskWrapper';
 
 function AdminGrouphoneView() {
   return (

@@ -3,6 +3,7 @@ import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import userReducer from '@/redux/slices/userSlice';
 import groupHomeReducer from '@/redux/slices/groupHomeSlice';
+import { schedulesApi } from '@/redux/slices/scheduleSlice';
 
 const rootPersistConfig = {
   key: 'root',
@@ -14,6 +15,7 @@ const rootPersistConfig = {
 const rootReducer = combineReducers({
   user: userReducer,
   grouphome: groupHomeReducer,
+  [schedulesApi.reducerPath]: schedulesApi.reducer,
 });
 
 export const persistedReducer = persistReducer(rootPersistConfig, rootReducer);

@@ -22,7 +22,7 @@ import { ScheduleWrapper } from '@/_componets/schedules/ScheduleWrapper';
 export default function Page() {
   const params = useParams();
   const dispatch = useDispatch();
-  const home = useSelector((state: RootState) => state.reducer.grouphome.grouphomeInfo);
+  const home = useSelector((state: RootState) => state.grouphome.grouphomeInfo);
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const role = useAuth().user.role;
   const [adminView, setAdminView] = useState<boolean>(false);

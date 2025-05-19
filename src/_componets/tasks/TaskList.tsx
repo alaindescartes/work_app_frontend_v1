@@ -27,11 +27,9 @@ function TaskList({ flag }: TaskListProps) {
   >({});
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  const currentGroupHomeId = useSelector(
-    (state: RootState) => state.reducer.grouphome.grouphomeInfo.id
-  );
+  const currentGroupHomeId = useSelector((state: RootState) => state.grouphome.grouphomeInfo.id);
   const currentGroupHomeName = useSelector(
-    (state: RootState) => state.reducer.grouphome.grouphomeInfo.name
+    (state: RootState) => state.grouphome.grouphomeInfo.name
   );
   const [completedTask, setCompletedTask] = useState<CompletedTask[]>([]);
   const [currentCompletedTask, setCurrentCompletedTask] = useState<CompletedTask[]>([]);

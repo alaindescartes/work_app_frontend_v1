@@ -18,12 +18,14 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   // Days that contain at least one schedule in this month
   const eventDays = useMemo(() => {
     const set = new Set<number>();
-    schedules.forEach(s => {
-      const start = new Date(s.start_time);
-      if (start.getFullYear() === year && start.getMonth() === month) {
-        set.add(start.getDate());
-      }
-    });
+    if (Array.isArray(schedules)) {
+      schedules.forEach(s => {
+        const start = new Date(s.start_time);
+        if (start.getFullYear() === year && start.getMonth() === month) {
+          set.add(start.getDate());
+        }
+      });
+    }
     return set;
   }, [schedules, year, month]);
 

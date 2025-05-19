@@ -1,11 +1,9 @@
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 function useAuth() {
-  const user = useSelector((state: RootState) => state.reducer.user.userInfo);
-  const isLoggedIn = useSelector(
-    (state: RootState) => state.reducer.user.isLoggedIn
-  );
+  const user = useSelector((state: RootState) => state.user.userInfo);
+  const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
 
   return { user, isLoggedIn };
 }

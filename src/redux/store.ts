@@ -1,24 +1,16 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { persistedReducer } from "@/store/configStore";
-import {
-  FLUSH,
-  REHYDRATE,
-  PAUSE,
-  PERSIST,
-  PURGE,
-  REGISTER,
-} from "redux-persist";
+import { configureStore } from '@reduxjs/toolkit';
+import { persistedReducer } from '@/store/configStore';
+import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
+import { schedulesApi } from '@/redux/slices/scheduleSlice';
 
 export const store = configureStore({
-  reducer: {
-    reducer: persistedReducer,
-  },
-  middleware: (getDefaultMiddleware) =>
+  reducer: persistedReducer,
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    }).concat(schedulesApi.middleware),
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

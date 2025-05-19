@@ -7,10 +7,10 @@ import Image from 'next/image';
 import { FaArrowLeft } from 'react-icons/fa';
 
 export default function ClientInfo({ clientId }: { clientId: string }) {
-  const clients = useSelector((state: RootState) => state.reducer.grouphome.residents);
+  const clients = useSelector((state: RootState) => state.grouphome.residents);
   const router = useRouter();
 
-  const resident = clients.find((client) => client.id === Number(clientId));
+  const resident = clients.find(client => client.id === Number(clientId));
 
   if (!resident) {
     return (

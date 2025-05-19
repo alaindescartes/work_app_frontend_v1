@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/select';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { ResidentFetch } from '@/interfaces/clientInterface';
-import { json } from 'stream/consumers';
 import { toast } from 'sonner';
 
 function TaskForm() {
@@ -24,7 +23,7 @@ function TaskForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -36,7 +35,7 @@ function TaskForm() {
     const newErrors: { [key: string]: boolean } = {};
     const requiredFields = ['description', 'groupHomeId'];
 
-    requiredFields.forEach((field) => {
+    requiredFields.forEach(field => {
       if (!formData[field as keyof TaskInsert]) {
         newErrors[field] = true;
       }
@@ -82,7 +81,7 @@ function TaskForm() {
   };
 
   const getClientForHome = async (value: string) => {
-    setFormData((prev) => ({ ...prev, groupHomeId: Number(value), residentId: undefined }));
+    setFormData(prev => ({ ...prev, groupHomeId: Number(value), residentId: undefined }));
 
     //fetch residents associated to a home
     try {
@@ -163,7 +162,7 @@ function TaskForm() {
           </label>
           <Select
             value={formData.groupHomeId?.toString() || ''}
-            onValueChange={(value) => getClientForHome(value)}
+            onValueChange={value => getClientForHome(value)}
           >
             <SelectTrigger
               className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 shadow-sm ${
@@ -175,7 +174,7 @@ function TaskForm() {
               <SelectValue placeholder="Select a Group Home" />
             </SelectTrigger>
             <SelectContent>
-              {homes.map((home) => (
+              {homes.map(home => (
                 <SelectItem value={home.id.toString()} key={home.id}>
                   {home.name}
                 </SelectItem>
@@ -191,15 +190,13 @@ function TaskForm() {
           </label>
           <Select
             value={formData.residentId?.toString() || ''}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, residentId: Number(value) }))
-            }
+            onValueChange={value => setFormData(prev => ({ ...prev, residentId: Number(value) }))}
           >
             <SelectTrigger className="w-full p-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
               <SelectValue placeholder="Select a Resident (optional)" />
             </SelectTrigger>
             <SelectContent>
-              {clients.map((client) => (
+              {clients.map(client => (
                 <SelectItem value={client.id.toString()} key={client.id}>
                   {client.firstName} {client.lastName}
                 </SelectItem>
