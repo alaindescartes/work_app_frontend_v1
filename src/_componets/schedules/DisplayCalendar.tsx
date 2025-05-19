@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
+import { parseISO } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import CalendarCell from '@/_componets/schedules/CalendarCell';
 import { Schedule } from '@/interfaces/scheduleInterface';
 
@@ -15,19 +17,26 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   const year = date.getFullYear();
   const month = date.getMonth();
 
+  // normalize: accept either Schedule[] or { schedules: Schedule[] }
+  const scheduleList: Schedule[] = Array.isArray(schedules)
+    ? schedules
+    : ((schedules as any)?.schedules ?? []);
+
   // Days that contain at least one schedule in this month
   const eventDays = useMemo(() => {
     const set = new Set<number>();
-    if (Array.isArray(schedules)) {
-      schedules.forEach(s => {
-        const start = new Date(s.start_time);
+    if (scheduleList.length) {
+      scheduleList.forEach((s) => {
+        const startUtc =
+          typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
+        const start = toZonedTime(startUtc, 'America/Edmonton'); // force MDT
         if (start.getFullYear() === year && start.getMonth() === month) {
           set.add(start.getDate());
         }
       });
     }
     return set;
-  }, [schedules, year, month]);
+  }, [scheduleList, year, month]);
 
   const monthName = date.toLocaleString('default', { month: 'long' });
 
@@ -49,7 +58,12 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   const trailingEmpty = Array.from({
     length: totalCells - (leadingEmpty.length + daysInMonth.length),
   });
-
+  console.log(scheduleList);
+  // ⬇︎ add just below the eventDays useMemo
+  console.log(
+    'eventDays (MDT):',
+    [...eventDays].sort((a, b) => a - b)
+  );
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
@@ -61,7 +75,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
 
       {/* Weekday labels */}
       <div className="grid grid-cols-7 w-full gap-2 text-center text-sm font-medium text-purple-700 mb-2">
-        {weekDays.map(d => (
+        {weekDays.map((d) => (
           <span key={d} className="flex justify-center">
             {d}
           </span>
@@ -74,7 +88,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
           <div key={`lead-${idx}`} className="aspect-square" />
         ))}
 
-        {daysInMonth.map(day => (
+        {daysInMonth.map((day) => (
           <CalendarCell
             key={day.toISOString()}
             date={day}

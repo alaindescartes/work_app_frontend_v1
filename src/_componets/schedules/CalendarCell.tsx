@@ -25,7 +25,9 @@ export default function CalendarCell({
       } ${className}`}
     >
       <span className="text-lg font-medium">{dayNumber}</span>
-      {hasEvent && <span className="absolute bottom-1 w-2 h-2 bg-purple-700 rounded-full" />}
+      {hasEvent && (
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-purple-600 border border-white shadow" />
+      )}
     </div>
   );
 }
