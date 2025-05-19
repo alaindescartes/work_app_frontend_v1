@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { ScheduleInsert } from '@/interfaces/scheduleInterface';
 import { useAddScheduleMutation } from '@/redux/slices/scheduleSlice';
 import { toast } from 'sonner';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ScheduleFormProps {
   /** Called with the array of schedules after successful submit */
@@ -15,9 +24,11 @@ interface ScheduleFormProps {
  * Purple‑toned Tailwind styles throughout to match design preference.
  */
 export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
+  const groupHomeId = useSelector((state: RootState) => state.grouphome.grouphomeInfo.id);
+  const residents = useSelector((state: RootState) => state.grouphome.residents);
   const blank: ScheduleInsert = {
     residentId: 0,
-    groupHomeId: 0,
+    groupHomeId: groupHomeId ? groupHomeId : 0,
     title: '',
     description: '',
     start_time: new Date(),
@@ -106,21 +117,32 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
             {/* Resident & Group Home */}
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col text-sm">
-                <span className="text-purple-600">Resident ID</span>
-                <input
-                  type="number"
-                  value={f.residentId}
-                  onChange={(e) => updateField(idx, 'residentId', Number(e.target.value))}
-                  className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
-                  required
-                />
+                <span className="text-purple-600">Resident</span>
+
+                <Select
+                  value={f.residentId ? f.residentId.toString() : ''}
+                  onValueChange={(val) => updateField(idx, 'residentId', Number(val))}
+                >
+                  <SelectTrigger className="w-[180px] h-[28px] border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500">
+                    <SelectValue placeholder="Select Resident" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {residents.map((resident) => (
+                      <SelectItem key={resident.id} value={resident.id.toString()}>
+                        {resident.firstName} {resident.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
 
               <label className="flex flex-col text-sm">
                 <span className="text-purple-600">Group Home ID</span>
                 <input
                   type="number"
-                  value={f.groupHomeId}
+                  disabled={true}
+                  value={groupHomeId}
                   onChange={(e) => updateField(idx, 'groupHomeId', Number(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
