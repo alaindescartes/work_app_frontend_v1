@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScheduleInsert } from '@/interfaces/scheduleInterface';
 import { useAddScheduleMutation } from '@/redux/slices/scheduleSlice';
+import { toast } from 'sonner';
 
 interface ScheduleFormProps {
   /** Called with the array of schedules after successful submit */
@@ -35,36 +36,58 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
     key: keyof ScheduleInsert,
     value: ScheduleInsert[keyof ScheduleInsert]
   ) => {
-    setForms(prev => prev.map((f, i) => (i === idx ? { ...f, [key]: value } : f)));
+    setForms((prev) => prev.map((f, i) => (i === idx ? { ...f, [key]: value } : f)));
   };
 
   /** Save current filled forms locally and reset UI to a blank entry */
   const addForm = () => {
     // Only push non‑empty forms (simple title check)
-    const filled = forms.filter(f => f.title.trim() !== '');
+    const filled = forms.filter((f) => f.title.trim() !== '');
     if (filled.length) {
-      setSavedSchedules(prev => [...prev, ...filled]);
+      setSavedSchedules((prev) => [...prev, ...filled]);
     }
     // Reset with one blank schedule
     setForms([{ ...blank }]);
   };
 
   /** Remove a schedule form */
-  const removeForm = (idx: number) => setForms(prev => prev.filter((_, i) => i !== idx));
+  const removeForm = (idx: number) => setForms((prev) => prev.filter((_, i) => i !== idx));
 
   /** Submit handler: send all schedules in one batch */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = [...savedSchedules, ...forms.filter(f => f.title.trim() !== '')];
+    const payload = [...savedSchedules, ...forms.filter((f) => f.title.trim() !== '')];
     if (!payload.length) return;
+    // Show a loading toast and keep its id so we can update it
+    const toastId = toast.loading('Saving…');
+
     try {
       await addSchedule(payload).unwrap();
+
+      // Update the same toast to success ‑ green bg, white text
+      toast.success('', {
+        id: toastId,
+        description: 'Schedules saved successfully',
+        style: { background: '#16a34a', color: '#fff' },
+      });
+
       onSubmit?.(payload);
-      // Clear both local buffers after successful save
+
+      // Clear both local buffers after a successful save
       setForms([{ ...blank }]);
       setSavedSchedules([]);
     } catch (err) {
-      console.error('Failed to save schedules:', err);
+      // Update the same toast to error ‑ red bg, white text
+      toast.error('', {
+        id: toastId,
+        description: 'Could not save schedules',
+        style: { background: '#dc2626', color: '#fff' },
+      });
+
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.error('Failed to save schedules:', err);
+      }
+      // TODO: log in a logging service
     }
   };
 
@@ -87,7 +110,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <input
                   type="number"
                   value={f.residentId}
-                  onChange={e => updateField(idx, 'residentId', Number(e.target.value))}
+                  onChange={(e) => updateField(idx, 'residentId', Number(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
@@ -98,7 +121,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <input
                   type="number"
                   value={f.groupHomeId}
-                  onChange={e => updateField(idx, 'groupHomeId', Number(e.target.value))}
+                  onChange={(e) => updateField(idx, 'groupHomeId', Number(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
@@ -111,7 +134,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
               <input
                 type="text"
                 value={f.title}
-                onChange={e => updateField(idx, 'title', e.target.value)}
+                onChange={(e) => updateField(idx, 'title', e.target.value)}
                 className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                 required
               />
@@ -122,7 +145,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
               <span className="text-purple-600">Description</span>
               <textarea
                 value={f.description}
-                onChange={e => updateField(idx, 'description', e.target.value)}
+                onChange={(e) => updateField(idx, 'description', e.target.value)}
                 className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500 min-h-[80px]"
               />
             </label>
@@ -134,7 +157,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <input
                   type="datetime-local"
                   value={f.start_time.toISOString().slice(0, 16)}
-                  onChange={e => updateField(idx, 'start_time', new Date(e.target.value))}
+                  onChange={(e) => updateField(idx, 'start_time', new Date(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
@@ -145,7 +168,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <input
                   type="datetime-local"
                   value={f.end_time.toISOString().slice(0, 16)}
-                  onChange={e => updateField(idx, 'end_time', new Date(e.target.value))}
+                  onChange={(e) => updateField(idx, 'end_time', new Date(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
@@ -158,7 +181,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <input
                   type="checkbox"
                   checked={f.is_recurring}
-                  onChange={e => updateField(idx, 'is_recurring', e.target.checked)}
+                  onChange={(e) => updateField(idx, 'is_recurring', e.target.checked)}
                   className="accent-purple-600"
                 />
                 <span className="text-sm text-purple-700">Is Recurring</span>
@@ -168,7 +191,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <span className="text-purple-600">Schedule Type</span>
                 <select
                   value={f.schedule_type}
-                  onChange={e =>
+                  onChange={(e) =>
                     updateField(
                       idx,
                       'schedule_type',
@@ -189,7 +212,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
               <span className="text-purple-600">Notes</span>
               <textarea
                 value={f.notes ?? ''}
-                onChange={e => updateField(idx, 'notes', e.target.value)}
+                onChange={(e) => updateField(idx, 'notes', e.target.value)}
                 className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500 min-h-[60px]"
               />
             </label>
