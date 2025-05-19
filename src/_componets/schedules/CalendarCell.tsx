@@ -2,6 +2,7 @@ interface CalendarCellProps {
   date: Date;
   hasEvent?: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 /**
@@ -15,12 +16,14 @@ export default function CalendarCell({
   date,
   hasEvent = false,
   className = 'w-16 h-16',
+  onClick,
 }: CalendarCellProps) {
   const dayNumber = date.getDate();
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center border rounded-md ${
+      onClick={onClick}
+      className={`relative flex flex-col items-center justify-center border rounded-md cursor-pointer hover:bg-purple-200 transition-colors ${
         hasEvent ? 'bg-purple-100' : 'bg-white'
       } ${className}`}
     >
