@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskList from '@/_componets/tasks/TaskList';
+import { ScheduleWrapper } from '@/_componets/schedules/ScheduleWrapper';
 
 export default function Page() {
   const params = useParams();
@@ -207,7 +208,9 @@ export default function Page() {
         <TabsContent value="other">
           <TaskList flag={handleUnsavedChanges} />
         </TabsContent>
-        <TabsContent value="client-schedule">client schedule</TabsContent>
+        <TabsContent value="client-schedule">
+          <ScheduleWrapper />
+        </TabsContent>
         <TabsContent value="logs">staff shift logs</TabsContent>
         <TabsContent value="reports">reports</TabsContent>
       </Tabs>
