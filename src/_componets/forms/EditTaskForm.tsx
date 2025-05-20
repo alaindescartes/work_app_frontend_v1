@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { Task, TaskInsert } from "@/interfaces/taskInterface";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { Task, TaskInsert } from '@/interfaces/taskInterface';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select";
-import { useEffect } from "react";
-import { GroupHomeFetch } from "@/interfaces/groupHomeInterface";
-import { ResidentFetch } from "@/interfaces/clientInterface";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { useEffect } from 'react';
+import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
+import { ResidentFetch } from '@/interfaces/clientInterface';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 function EditTaskForm() {
   const [formData, setFormData] = useState<Partial<TaskInsert>>({});
@@ -34,11 +34,9 @@ function EditTaskForm() {
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -48,9 +46,9 @@ function EditTaskForm() {
     e.preventDefault();
 
     const newErrors: { [key: string]: boolean } = {};
-    const requiredFields = ["description", "groupHomeId"];
+    const requiredFields = ['description', 'groupHomeId'];
 
-    requiredFields.forEach((field) => {
+    requiredFields.forEach(field => {
       if (!formData[field as keyof TaskInsert]) {
         newErrors[field] = true;
       }
@@ -66,18 +64,18 @@ function EditTaskForm() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/edit-task/${currentTask?.id}`,
         {
-          credentials: "include",
-          method: "POST",
+          credentials: 'include',
+          method: 'POST',
           body: JSON.stringify(formData),
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
 
       if (res.ok) {
-        toast("successfully edited this task", {
-          style: { backgroundColor: "green", color: "white" },
+        toast('successfully edited this task', {
+          style: { backgroundColor: 'green', color: 'white' },
         });
         // Refresh the task list for the selected group home
         if (formData.groupHomeId) {
@@ -87,12 +85,13 @@ function EditTaskForm() {
         setMadeChoice(false);
         setFormData({});
       }
-    } catch (error: any) {
-      toast("could not edit this task", {
-        style: { backgroundColor: "red", color: "white" },
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast('could not edit this task', {
+        style: { backgroundColor: 'red', color: 'white' },
       });
-      if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
-        console.log("error adding tasks", error.message);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error editing task', message);
       }
       //TODO:log to a logging service
     } finally {
@@ -105,8 +104,8 @@ function EditTaskForm() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/all-GroupHome-task/${id}`,
         {
-          credentials: "include",
-          method: "GET",
+          credentials: 'include',
+          method: 'GET',
         }
       );
 
@@ -114,16 +113,17 @@ function EditTaskForm() {
         const data = await res.json();
         setTasks(data.tasks);
       }
-    } catch (error: any) {
-      if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
-        console.log("error adding tasks", error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error fetching tasks', message);
       }
       //TODO:log to a logging service
     }
   };
 
   const getClientForHome = async (value: string) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       groupHomeId: Number(value),
       residentId: undefined,
@@ -134,18 +134,19 @@ function EditTaskForm() {
       const residents = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/find-residents/${value}`,
         {
-          credentials: "include",
-          method: "GET",
+          credentials: 'include',
+          method: 'GET',
         }
       );
       if (residents.ok) {
         const data = await residents.json();
         setClients(data.residentsData);
-        getTaskByHome(value);
+        await getTaskByHome(value);
       }
-    } catch (error: any) {
-      if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
-        console.log("error adding tasks", error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error fetching residents', message);
       }
       //TODO:log to a logging service
     }
@@ -156,25 +157,26 @@ function EditTaskForm() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/task-route/delete-task/${id}`,
         {
-          credentials: "include",
-          method: "DELETE",
+          credentials: 'include',
+          method: 'DELETE',
         }
       );
 
       if (res.ok) {
-        toast("successfully Deleted this task", {
-          style: { backgroundColor: "green", color: "white" },
+        toast('successfully Deleted this task', {
+          style: { backgroundColor: 'green', color: 'white' },
         });
         if (formData.groupHomeId) {
           await getTaskByHome(String(formData.groupHomeId));
         }
       }
-    } catch (error: any) {
-      toast(error.message || "could not delete this message", {
-        style: { backgroundColor: "red", color: "white" },
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast(message || 'could not delete this task', {
+        style: { backgroundColor: 'red', color: 'white' },
       });
-      if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
-        console.log("error deleting tasks", error.message);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.log('error deleting task', message);
       }
       //TODO:log to a logging service
     }
@@ -186,8 +188,8 @@ function EditTaskForm() {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grouphome-route/get-grouphomes`,
           {
-            credentials: "include",
-            method: "GET",
+            credentials: 'include',
+            method: 'GET',
           }
         );
 
@@ -195,39 +197,38 @@ function EditTaskForm() {
           const allHomes = await res.json();
           setHomes(allHomes.groupHomes);
         }
-      } catch (error: any) {
-        if (process.env.NEXT_PUBLIC_NODE_ENV !== "production") {
-          console.log("error adding tasks", error.message);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+          console.log('error fetching homes', message);
         }
         //TODO:log to a logging service
       }
     };
 
-    fetchAllHomes();
+    fetchAllHomes().then();
   }, []);
 
   return (
     <div>
       {/* home selection */}
       <div className="mb-6 p-4 bg-white border border-purple-200 rounded-lg shadow-sm">
-        <h2 className="text-lg font-semibold text-purple-700 mb-3">
-          Select home to continue
-        </h2>
+        <h2 className="text-lg font-semibold text-purple-700 mb-3">Select home to continue</h2>
         <Select
-          value={formData.groupHomeId?.toString() || ""}
-          onValueChange={(value) => getClientForHome(value)}
+          value={formData.groupHomeId?.toString() || ''}
+          onValueChange={value => getClientForHome(value)}
         >
           <SelectTrigger
             className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 shadow-sm ${
               errors.groupHomeId
-                ? "border-red-500 focus:ring-red-500"
-                : "border-purple-300 focus:ring-purple-500"
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-purple-300 focus:ring-purple-500'
             }`}
           >
             <SelectValue placeholder="Select a Group Home" />
           </SelectTrigger>
           <SelectContent>
-            {homes.map((home) => (
+            {homes.map(home => (
               <SelectItem value={home.id.toString()} key={home.id}>
                 {home.name}
               </SelectItem>
@@ -240,16 +241,14 @@ function EditTaskForm() {
       <div className="space-y-4 mb-6">
         {tasks &&
           tasks.length !== 0 &&
-          tasks.map((task) =>
+          tasks.map(task =>
             currentTask?.id === task.id ? (
               <div
                 key={task.id}
                 className="flex flex-col bg-white border border-purple-400 rounded-lg shadow-md p-4 ring-2 ring-purple-500"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <p className="text-gray-800 font-medium text-base">
-                    {task.description}
-                  </p>
+                  <p className="text-gray-800 font-medium text-base">{task.description}</p>
                   <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded">
                     Currently editing this task
                   </span>
@@ -275,12 +274,12 @@ function EditTaskForm() {
                       </label>
                       <textarea
                         name="description"
-                        value={formData.description || ""}
+                        value={formData.description || ''}
                         onChange={handleChange}
                         className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 shadow-sm resize-y min-h-[80px] leading-relaxed ${
                           errors.description
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-purple-300 focus:ring-purple-500"
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-purple-300 focus:ring-purple-500'
                         }`}
                         placeholder="Task description"
                       />
@@ -291,9 +290,9 @@ function EditTaskForm() {
                         Group Home <span className="text-red-700">*</span>
                       </label>
                       <Select
-                        value={formData.groupHomeId?.toString() || ""}
-                        onValueChange={(value) =>
-                          setFormData((prev) => ({
+                        value={formData.groupHomeId?.toString() || ''}
+                        onValueChange={value =>
+                          setFormData(prev => ({
                             ...prev,
                             groupHomeId: Number(value),
                           }))
@@ -302,18 +301,15 @@ function EditTaskForm() {
                         <SelectTrigger
                           className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 shadow-sm ${
                             errors.groupHomeId
-                              ? "border-red-500 focus:ring-red-500"
-                              : "border-purple-300 focus:ring-purple-500"
+                              ? 'border-red-500 focus:ring-red-500'
+                              : 'border-purple-300 focus:ring-purple-500'
                           }`}
                         >
                           <SelectValue placeholder="Select a Group Home" />
                         </SelectTrigger>
                         <SelectContent>
-                          {homes.map((home) => (
-                            <SelectItem
-                              key={home.id}
-                              value={home.id.toString()}
-                            >
+                          {homes.map(home => (
+                            <SelectItem key={home.id} value={home.id.toString()}>
                               {home.name}
                             </SelectItem>
                           ))}
@@ -326,9 +322,9 @@ function EditTaskForm() {
                         Resident (optional)
                       </label>
                       <Select
-                        value={formData.residentId?.toString() || ""}
-                        onValueChange={(value) =>
-                          setFormData((prev) => ({
+                        value={formData.residentId?.toString() || ''}
+                        onValueChange={value =>
+                          setFormData(prev => ({
                             ...prev,
                             residentId: Number(value),
                           }))
@@ -338,11 +334,8 @@ function EditTaskForm() {
                           <SelectValue placeholder="Select a Resident (optional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          {clients.map((client) => (
-                            <SelectItem
-                              value={client.id.toString()}
-                              key={client.id}
-                            >
+                          {clients.map(client => (
+                            <SelectItem value={client.id.toString()} key={client.id}>
                               {client.firstName} {client.lastName}
                             </SelectItem>
                           ))}
@@ -355,7 +348,7 @@ function EditTaskForm() {
                       disabled={isSubmitting}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer"
                     >
-                      {isSubmitting ? "Saving changes..." : "Save Changes"}
+                      {isSubmitting ? 'Saving changes...' : 'Save Changes'}
                     </Button>
                   </form>
                 )}
@@ -366,9 +359,7 @@ function EditTaskForm() {
                 className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white border border-gray-200 rounded-lg shadow-md p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex-1">
-                  <p className="text-gray-800 font-medium text-base">
-                    {task.description}
-                  </p>
+                  <p className="text-gray-800 font-medium text-base">{task.description}</p>
                 </div>
                 <div className="flex space-x-3 mt-3 sm:mt-0">
                   <button
@@ -392,19 +383,15 @@ function EditTaskForm() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you absolutely sure?
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete this and remove it from our servers.
+                          This action cannot be undone. This will permanently delete this and remove
+                          it from our servers.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteTask(task.id)}
-                        >
+                        <AlertDialogAction onClick={() => handleDeleteTask(task.id)}>
                           Continue
                         </AlertDialogAction>
                       </AlertDialogFooter>

@@ -7,7 +7,6 @@ import CalendarCell from '@/_componets/schedules/CalendarCell';
 import { Schedule } from '@/interfaces/scheduleInterface';
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -33,10 +32,12 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   const month = date.getMonth();
   const staffId = useSelector((state: RootState) => state.user.userInfo.staffId);
 
-  // normalize: accept either Schedule[] or { schedules: Schedule[] }
-  const scheduleList: Schedule[] = Array.isArray(schedules)
-    ? schedules
-    : ((schedules as any)?.schedules ?? []);
+  // Normalize schedules once and memoize so it doesn't change on every render
+  const scheduleList: Schedule[] = useMemo(() => {
+    if (Array.isArray(schedules)) return schedules;
+    const obj = schedules as { schedules?: Schedule[] };
+    return obj.schedules ?? [];
+  }, [schedules]);
 
   // writable copy so we can do optimistic updates without mutating frozen props
   const [localSchedules, setLocalSchedules] = useState<Schedule[]>(scheduleList);
@@ -50,7 +51,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   const eventDays = useMemo(() => {
     const set = new Set<number>();
     if (localSchedules.length) {
-      localSchedules.forEach((s) => {
+      localSchedules.forEach(s => {
         const startUtc =
           typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
         const start = toZonedTime(startUtc, 'America/Edmonton'); // force MDT
@@ -93,8 +94,8 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
         patch: { status },
       }).unwrap();
       // optimistic local update
-      setLocalSchedules((prev) =>
-        prev.map((sch) => (sch.id === scheduleId ? { ...sch, status } : sch))
+      setLocalSchedules(prev =>
+        prev.map(sch => (sch.id === scheduleId ? { ...sch, status } : sch))
       );
       toast.success('', {
         id: toastId,
@@ -129,7 +130,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
     const mm = selectedDay.getMonth();
     const dd = selectedDay.getDate();
 
-    return localSchedules.filter((s) => {
+    return localSchedules.filter(s => {
       const startUtc =
         typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
       const start = toZonedTime(startUtc, 'America/Edmonton');
@@ -146,7 +147,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
 
       {/* Weekday labels */}
       <div className="grid grid-cols-7 w-full gap-2 text-center text-sm font-medium text-purple-700 mb-2">
-        {weekDays.map((d) => (
+        {weekDays.map(d => (
           <span key={d} className="flex justify-center">
             {d}
           </span>
@@ -159,7 +160,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
           <div key={`lead-${idx}`} className="aspect-square" />
         ))}
 
-        {daysInMonth.map((day) => (
+        {daysInMonth.map(day => (
           <Drawer
             key={day.toISOString()}
             open={open && selectedDay?.getTime() === day.getTime()}
@@ -189,7 +190,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
 
               {/* List of schedules */}
               <div className="space-y-3 px-4 pb-4 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-300/70 scrollbar-thumb-rounded">
-                {daySchedules.map((s) => (
+                {daySchedules.map(s => (
                   <div
                     key={s.id}
                     className={`relative border rounded-lg p-4 pr-5 shadow-sm transition-shadow 

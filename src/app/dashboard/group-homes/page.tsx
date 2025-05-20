@@ -11,7 +11,7 @@ function Pages() {
   const [adminView, setAdminView] = useState<boolean>(false);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const isSupervisor = user?.role === 'supervisor';
+  //const isSupervisor = user?.role === 'supervisor';
 
   const swithAdminView = () => {
     setAdminView(prev => {

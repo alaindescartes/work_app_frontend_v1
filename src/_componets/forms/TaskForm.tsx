@@ -69,12 +69,14 @@ function TaskForm() {
         setTaskList([]);
         toast('Task added Successfully', { style: { backgroundColor: 'green', color: 'white' } });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-        console.log('error submitting tasks', error.message);
+        console.log('error submitting tasks', message);
       }
-      toast('Could not add Task', { style: { backgroundColor: 'red', color: 'white' } });
-      //TODO:log to a logging service
+      toast(message || 'Could not add Task', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -96,11 +98,11 @@ function TaskForm() {
         const data = await residents.json();
         setClients(data.residentsData);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-        console.log('error adding tasks', error.message);
+        console.log('error fetching residents', message);
       }
-      //TODO:log to a logging service
     }
   };
 
@@ -119,11 +121,11 @@ function TaskForm() {
           const allHomes = await res.json();
           setHomes(allHomes.groupHomes);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-          console.log('error adding tasks', error.message);
+          console.log('error fetching homes', message);
         }
-        //TODO:log to a logging service
       }
     };
 

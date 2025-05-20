@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
-import useAuth from '@/lib/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,8 +39,9 @@ export default function Edit_RemoveGroupHome() {
       } else {
         console.log(data.message);
       }
-    } catch (error: any) {
-      console.log(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.log(message);
     } finally {
       setIsLoading(false);
     }
@@ -68,11 +69,12 @@ export default function Edit_RemoveGroupHome() {
           style: { backgroundColor: 'green', color: 'white' },
         });
       }
-    } catch (error: any) {
-      toast('Error deleting group home', {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast(message || 'Error deleting group home', {
         style: { backgroundColor: 'red', color: 'white' },
       });
-      console.log(error.message);
+      console.log(message);
     } finally {
       setIsLoading(false);
     }
@@ -105,9 +107,11 @@ export default function Edit_RemoveGroupHome() {
           >
             <div className="flex flex-col sm:flex-row items-center gap-4 flex-1">
               {home.image_url ? (
-                <img
+                <Image
                   src={home.image_url}
                   alt={home.name}
+                  width={96}
+                  height={96}
                   className="w-24 h-24 object-cover rounded-md"
                 />
               ) : (

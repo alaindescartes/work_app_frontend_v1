@@ -22,7 +22,7 @@ export default function ClientList({
 
   return (
     <>
-      {clientArray.map((client, _) => (
+      {clientArray.map(client => (
         <Client
           key={client.id}
           firstName={client.firstName}

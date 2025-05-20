@@ -25,7 +25,7 @@ export default function Page() {
   const home = useSelector((state: RootState) => state.grouphome.grouphomeInfo);
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const role = useAuth().user.role;
-  const [adminView, setAdminView] = useState<boolean>(false);
+  //const [adminView, setAdminView] = useState<boolean>(false);
   const [ClientIdToDelete, setClientIdToDelete] = useState<string | null>(null);
   const [isUnsavedChanges, setIsUnsavedChanges] = useState<boolean>(false);
 
@@ -79,9 +79,10 @@ export default function Page() {
           setClients(data.residentsData);
           dispatch(setGroupHomeClients(data.residentsData));
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
         if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-          console.error('Error fetching clients...', e.message);
+          console.error('Error fetching clients...', message);
         }
         // TODO: send error to monitoring service in production
       }
@@ -122,9 +123,10 @@ export default function Page() {
           color: 'white',
         },
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
       if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-        console.error('Error deleting client...', e.message);
+        console.error('Error deleting client...', message);
       }
       // TODO: send error to monitoring service in production
     }
