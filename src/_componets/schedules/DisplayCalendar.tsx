@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import CalendarCell from '@/_componets/schedules/CalendarCell';
@@ -16,6 +16,10 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { useUpdateScheduleMutation } from '@/redux/slices/scheduleSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { toast } from 'sonner';
 
 interface DisplayCalendarProps {
   /** Month to display (defaults to today) */
@@ -27,17 +31,26 @@ interface DisplayCalendarProps {
 export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCalendarProps) {
   const year = date.getFullYear();
   const month = date.getMonth();
+  const staffId = useSelector((state: RootState) => state.user.userInfo.staffId);
 
   // normalize: accept either Schedule[] or { schedules: Schedule[] }
   const scheduleList: Schedule[] = Array.isArray(schedules)
     ? schedules
     : ((schedules as any)?.schedules ?? []);
 
+  // writable copy so we can do optimistic updates without mutating frozen props
+  const [localSchedules, setLocalSchedules] = useState<Schedule[]>(scheduleList);
+
+  // keep in sync if parent prop changes
+  useEffect(() => {
+    setLocalSchedules(scheduleList);
+  }, [scheduleList]);
+
   // Days that contain at least one schedule in this month
   const eventDays = useMemo(() => {
     const set = new Set<number>();
-    if (scheduleList.length) {
-      scheduleList.forEach((s) => {
+    if (localSchedules.length) {
+      localSchedules.forEach((s) => {
         const startUtc =
           typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
         const start = toZonedTime(startUtc, 'America/Edmonton'); // force MDT
@@ -47,12 +60,13 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
       });
     }
     return set;
-  }, [scheduleList, year, month]);
+  }, [localSchedules, year, month]);
 
   const monthName = date.toLocaleString('default', { month: 'long' });
 
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [open, setOpen] = useState(false);
+  const [updateSchedule, { isLoading: isUpdating }] = useUpdateScheduleMutation();
 
   /** Returns all Date objects for the given month */
   const daysInMonth = useMemo(() => {
@@ -65,6 +79,39 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
     return days;
   }, [year, month]);
 
+  //handle completion or cancellation of a schedule
+  const handleScheduleCompleteOrCancellation = async (
+    scheduleId: number,
+    status: 'completed' | 'canceled'
+  ) => {
+    const toastId = toast.loading('Updating schedule...');
+
+    try {
+      await updateSchedule({
+        id: scheduleId,
+        staffId,
+        patch: { status },
+      }).unwrap();
+      // optimistic local update
+      setLocalSchedules((prev) =>
+        prev.map((sch) => (sch.id === scheduleId ? { ...sch, status } : sch))
+      );
+      toast.success('', {
+        id: toastId,
+        description: `Schedule ${status} updated`,
+        style: { background: '#16a34a', color: '#fff' }, // green
+      });
+    } catch (err) {
+      toast.error('', {
+        id: toastId,
+        description: 'Update failed',
+        style: { background: '#dc2626', color: '#fff' }, // red
+      });
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production')
+        console.error(`Failed to mark schedule ${status}:`, err);
+    }
+  };
+
   // Calculate leading/trailing empty cells for 7×6 grid
   const firstWeekday = new Date(year, month, 1).getDay(); // 0 = Sun
   const leadingEmpty = Array.from({ length: firstWeekday });
@@ -72,12 +119,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   const trailingEmpty = Array.from({
     length: totalCells - (leadingEmpty.length + daysInMonth.length),
   });
-  console.log(scheduleList);
-  // ⬇︎ add just below the eventDays useMemo
-  console.log(
-    'eventDays (MDT):',
-    [...eventDays].sort((a, b) => a - b)
-  );
+
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Compute schedules for the selected day
@@ -87,13 +129,13 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
     const mm = selectedDay.getMonth();
     const dd = selectedDay.getDate();
 
-    return scheduleList.filter((s) => {
+    return localSchedules.filter((s) => {
       const startUtc =
         typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
       const start = toZonedTime(startUtc, 'America/Edmonton');
       return start.getFullYear() === yy && start.getMonth() === mm && start.getDate() === dd;
     });
-  }, [selectedDay, scheduleList]);
+  }, [selectedDay, localSchedules]);
 
   return (
     <div className="w-full max-w-none p-4 bg-purple-50 rounded-lg shadow-md">
@@ -150,7 +192,14 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
                 {daySchedules.map((s) => (
                   <div
                     key={s.id}
-                    className={`relative border rounded-lg p-4 pr-5 bg-white shadow-sm hover:shadow-md transition-shadow
+                    className={`relative border rounded-lg p-4 pr-5 shadow-sm transition-shadow
+                      ${
+                        s.status === 'completed'
+                          ? 'bg-green-50 border-green-300 opacity-75 pointer-events-none'
+                          : s.status === 'canceled'
+                            ? 'bg-red-50 border-red-300 opacity-75 pointer-events-none'
+                            : 'bg-white hover:shadow-md'
+                      }
                       ${
                         s.schedule_type === 'appointment'
                           ? 'border-l-4 border-blue-500/70'
@@ -203,22 +252,26 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
                         minute: '2-digit',
                       })}
                     </p>
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        className="cursor-pointer bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-400"
-                        onClick={() => console.log('complete schedule', s.id)}
-                      >
-                        Complete
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="cursor-pointer bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-400"
-                        onClick={() => console.log('cancel schedule', s.id)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+                    {s.status === 'scheduled' && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          disabled={isUpdating}
+                          className="cursor-pointer bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-400"
+                          onClick={() => handleScheduleCompleteOrCancellation(s.id, 'completed')}
+                        >
+                          {isUpdating ? 'Completing...' : 'Complete'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={isUpdating}
+                          className="cursor-pointer bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-400"
+                          onClick={() => handleScheduleCompleteOrCancellation(s.id, 'canceled')}
+                        >
+                          {isUpdating ? 'Cancelling...' : 'Cancel  '}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

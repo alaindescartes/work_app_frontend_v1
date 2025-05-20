@@ -50,8 +50,8 @@ export const schedulesApi = createApi({
     /** PATCH /schedules/:id */
     updateSchedule: builder.mutation<Schedule, UpdateScheduleArgs>({
       query: ({ id, staffId, patch }) => ({
-        url: `/update-schedule/${staffId}/${id}`,
-        method: 'PATCH',
+        url: `/change-schedule/${staffId}/${id}`,
+        method: 'POST',
         body: patch,
       }),
       invalidatesTags: (result, error, { id }) => [
