@@ -7,6 +7,13 @@ import { Schedule, ScheduleInsert } from '@/interfaces/scheduleInterface';
  * RTK Query slice that handles all CRUD operations for schedules.
  * Adjust the `baseUrl`, endpoints, and types to fit your backend.
  */
+
+// --- UpdateScheduleArgs type for PATCH payload ---
+interface UpdateScheduleArgs {
+  id: number;
+  staffId: number;
+  patch: Partial<Schedule>;
+}
 export const schedulesApi = createApi({
   reducerPath: 'schedulesApi',
   baseQuery: fetchBaseQuery({
@@ -14,11 +21,11 @@ export const schedulesApi = createApi({
     credentials: 'include',
   }),
   tagTypes: ['Schedule'],
-  endpoints: builder => ({
+  endpoints: (builder) => ({
     /** GET /schedules */
     getSchedules: builder.query<Schedule[], number>({
-      query: homeId => `/get-schedules/${homeId}`,
-      providesTags: result =>
+      query: (homeId) => `/get-schedules/${homeId}`,
+      providesTags: (result) =>
         Array.isArray(result)
           ? [
               ...result.map(({ id }) => ({ type: 'Schedule' as const, id })),
@@ -32,7 +39,7 @@ export const schedulesApi = createApi({
       ScheduleInsert | ScheduleInsert[],
       ScheduleInsert | ScheduleInsert[]
     >({
-      query: body => ({
+      query: (body) => ({
         url: '/add-schedules',
         method: 'POST',
         body,
@@ -40,19 +47,22 @@ export const schedulesApi = createApi({
       invalidatesTags: [{ type: 'Schedule', id: 'LIST' }],
     }),
 
-    /** PUT /schedules/:id */
-    updateSchedule: builder.mutation<Schedule, Schedule>({
-      query: ({ id, ...patch }) => ({
-        url: `/schedules/${id}`,
-        method: 'PUT',
+    /** PATCH /schedules/:id */
+    updateSchedule: builder.mutation<Schedule, UpdateScheduleArgs>({
+      query: ({ id, staffId, patch }) => ({
+        url: `/update-schedule/${staffId}/${id}`,
+        method: 'PATCH',
         body: patch,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Schedule', id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Schedule', id },
+        { type: 'Schedule', id: 'LIST' },
+      ],
     }),
 
     /** DELETE /schedules/:id */
     deleteSchedule: builder.mutation<{ success: boolean; id: number }, number>({
-      query: id => ({
+      query: (id) => ({
         url: `/schedules/${id}`,
         method: 'DELETE',
       }),
