@@ -192,12 +192,12 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
                 {daySchedules.map((s) => (
                   <div
                     key={s.id}
-                    className={`relative border rounded-lg p-4 pr-5 shadow-sm transition-shadow
+                    className={`relative border rounded-lg p-4 pr-5 shadow-sm transition-shadow 
                       ${
                         s.status === 'completed'
-                          ? 'bg-green-50 border-green-300 opacity-75 pointer-events-none'
+                          ? 'bg-green-50 border-green-300 opacity-75 pointer-events-none font-extrabold'
                           : s.status === 'canceled'
-                            ? 'bg-red-50 border-red-300 opacity-75 pointer-events-none'
+                            ? 'bg-red-50 border-red-300 opacity-75 pointer-events-none font-extrabold'
                             : 'bg-white hover:shadow-md'
                       }
                       ${
