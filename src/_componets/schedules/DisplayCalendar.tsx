@@ -135,7 +135,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
               />
             </DrawerTrigger>
 
-            <DrawerContent>
+            <DrawerContent className="h-[80vh] rounded-t-2xl bg-white shadow-2xl ring-1 ring-purple-100">
               <DrawerHeader>
                 <DrawerTitle>{selectedDay?.toDateString()}</DrawerTitle>
                 <DrawerDescription>
@@ -146,25 +146,53 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
               </DrawerHeader>
 
               {/* List of schedules */}
-              <div className="space-y-3 px-4 pb-4">
+              <div className="space-y-3 px-4 pb-4 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-300/70 scrollbar-thumb-rounded">
                 {daySchedules.map((s) => (
-                  <div key={s.id} className="border rounded-lg p-3 bg-white shadow-sm">
-                    <div className="flex items-center justify-between">
+                  <div
+                    key={s.id}
+                    className={`relative border rounded-lg p-4 pr-5 bg-white shadow-sm hover:shadow-md transition-shadow
+                      ${
+                        s.schedule_type === 'appointment'
+                          ? 'border-l-4 border-blue-500/70'
+                          : s.schedule_type === 'daily-care'
+                            ? 'border-l-4 border-green-500/70'
+                            : 'border-l-4 border-indigo-500/70'
+                      }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
                       <span className="font-semibold text-purple-700">{s.title}</span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          s.schedule_type === 'appointment'
-                            ? 'bg-blue-100 text-blue-700'
-                            : s.schedule_type === 'daily-care'
+
+                      <div className="flex gap-2">
+                        {/* type badge */}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                            s.schedule_type === 'appointment'
+                              ? 'bg-blue-100 text-blue-700'
+                              : s.schedule_type === 'daily-care'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-indigo-100 text-indigo-700'
+                          }`}
+                        >
+                          {s.schedule_type}
+                        </span>
+
+                        {/* status badge */}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                            s.status === 'completed'
                               ? 'bg-green-100 text-green-700'
-                              : 'bg-indigo-100 text-indigo-700'
-                        }`}
-                      >
-                        {s.schedule_type}
-                      </span>
+                              : s.status === 'canceled'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {s.status}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{s.description}</p>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{s.description}</p>
+                    <hr className="my-2 border-dashed border-purple-100" />
+                    <p className="text-xs text-gray-500">
                       {new Date(s.start_time).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -175,6 +203,22 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
                         minute: '2-digit',
                       })}
                     </p>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        className="cursor-pointer bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-400"
+                        onClick={() => console.log('complete schedule', s.id)}
+                      >
+                        Complete
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="cursor-pointer bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-400"
+                        onClick={() => console.log('cancel schedule', s.id)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
