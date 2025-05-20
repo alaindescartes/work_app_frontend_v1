@@ -1,8 +1,8 @@
-"use client";
-import React, { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+'use client';
+import React, { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +10,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { useDispatch } from "react-redux";
-import { userSignOut } from "@/redux/slices/userSlice";
-import { AppDispatch } from "@/redux/store";
+} from '@/components/ui/dropdown-menu';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useDispatch } from 'react-redux';
+import { userSignOut } from '@/redux/slices/userSlice';
+import { AppDispatch } from '@/redux/store';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,31 +26,31 @@ function Header() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      const response = await fetch("http://localhost:3001/api/auth/logout", {
-        method: "POST",
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        credentials: "include",
+        credentials: 'include',
       });
       const data = await response.json();
 
       if (response.ok) {
-        router.push("/sign-in");
-        toast("Successfully logged out", {
-          style: { backgroundColor: "green", color: "white" },
+        router.push('/sign-in');
+        toast('Successfully logged out', {
+          style: { backgroundColor: 'green', color: 'white' },
         });
         dispatch(userSignOut());
         return;
       } else {
-        toast(data.message || "Logout failed", {
-          style: { backgroundColor: "red", color: "white" },
+        toast(data.message || 'Logout failed', {
+          style: { backgroundColor: 'red', color: 'white' },
         });
         return;
       }
     } catch (error: unknown) {
-      toast("a problem occurred while signing out!", {
-        style: { backgroundColor: "red", color: "white" },
+      toast('a problem occurred while signing out!', {
+        style: { backgroundColor: 'red', color: 'white' },
       });
       console.error(error);
     } finally {
@@ -65,7 +65,7 @@ function Header() {
         <div
           className="flex items-center space-x-3 flex-1 hover:cursor-pointer"
           onClick={() => {
-            router.push("/dashboard/home");
+            router.push('/dashboard/home');
           }}
         >
           <Image src="/logo.png" alt="logo" width={50} height={50} />
@@ -86,7 +86,7 @@ function Header() {
           {/* Nav Menu */}
           <nav
             className={`
-              ${menuOpen ? "block" : "hidden"} 
+              ${menuOpen ? 'block' : 'hidden'} 
               absolute top-full left-0 w-full bg-blue-900 z-50
               md:z-auto md:static md:bg-transparent
               md:flex md:items-center
@@ -95,11 +95,11 @@ function Header() {
             `}
           >
             {[
-              { label: "Residences", href: "/dashboard/group-homes" },
-              { label: "Documents", href: "/dashboard/documents" },
-              { label: "Schedules", href: "/dashboard/schedules" },
-              { label: "Timesheets", href: "/dashboard/timesheets" },
-              { label: "Staff Directory", href: "/dashboard/staff-directory" },
+              { label: 'Residences', href: '/dashboard/group-homes' },
+              { label: 'Documents', href: '/dashboard/documents' },
+              { label: 'Schedules', href: '/dashboard/schedules' },
+              { label: 'Timesheets', href: '/dashboard/timesheets' },
+              { label: 'Staff Directory', href: '/dashboard/staff-directory' },
             ].map(({ label, href }) => (
               <Link
                 key={label}
@@ -127,10 +127,7 @@ function Header() {
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                   <DropdownMenuItem>Billing</DropdownMenuItem>
                   <DropdownMenuItem>Team</DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                  >
+                  <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
