@@ -19,6 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskList from '@/_componets/tasks/TaskList';
 import { ScheduleWrapper } from '@/_componets/schedules/ScheduleWrapper';
 
+type TabKey = 'clients' | 'other' | 'client-schedule' | 'logs' | 'reports';
+
 export default function Page() {
   const params = useParams();
   const dispatch = useDispatch();
@@ -33,7 +35,7 @@ export default function Page() {
     setIsUnsavedChanges(unsaved);
   };
 
-  const [activeTab, setActiveTab] = useState<'clients' | 'other'>('clients');
+  const [activeTab, setActiveTab] = useState<TabKey>('clients');
 
   useEffect(() => {
     dispatch(resetGrouphomeInfo());
@@ -165,56 +167,66 @@ export default function Page() {
             });
             return;
           }
-          setActiveTab(value as 'clients' | 'other');
+          setActiveTab(value as TabKey);
         }}
       >
-        <TabsList className="bg-gray-100 rounded-lg p-1 flex space-x-2 mb-6 justify-start sm:justify-center overflow-x-auto">
+        <TabsList className="relative z-10 bg-gray-100 rounded-lg p-1 flex flex-wrap gap-2 mb-14 justify-start sm:justify-center">
           <TabsTrigger
             value="clients"
-            className="whitespace-nowrap text-sm sm:text-base w-full sm:w-auto px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-700 hover:bg-purple-200 transition-all"
+            className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
             Clients
           </TabsTrigger>
           <TabsTrigger
             value="other"
-            className="whitespace-nowrap text-sm sm:text-base w-full sm:w-auto px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-700 hover:bg-purple-200 transition-all"
+            className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
             Tasks
           </TabsTrigger>
           <TabsTrigger
             value="client-schedule"
-            className="whitespace-nowrap text-sm sm:text-base w-full sm:w-auto px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-700 hover:bg-purple-200 transition-all"
+            className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
             Monthly Client Schedule
           </TabsTrigger>
           <TabsTrigger
             value="logs"
-            className="whitespace-nowrap text-sm sm:text-base w-full sm:w-auto px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-700 hover:bg-purple-200 transition-all"
+            className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
             Shift Logs
           </TabsTrigger>
           <TabsTrigger
             value="reports"
-            className="whitespace-nowrap text-sm sm:text-base w-full sm:w-auto px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-700 hover:bg-purple-200 transition-all"
+            className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
             Reports
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="clients">
-          <ClientList
-            clientArray={clients}
-            onDeleteClient={handleDeleteClient}
-            deletingClientId={Number(ClientIdToDelete)}
-          />
+        <TabsContent value="clients" className="mt-4 z-0">
+          <div className="w-full">
+            <ClientList
+              clientArray={clients}
+              onDeleteClient={handleDeleteClient}
+              deletingClientId={Number(ClientIdToDelete)}
+            />
+          </div>
         </TabsContent>
-        <TabsContent value="other">
-          <TaskList flag={handleUnsavedChanges} />
+        <TabsContent value="other" className="mt-4 z-0">
+          <div className="w-full">
+            <TaskList flag={handleUnsavedChanges} />
+          </div>
         </TabsContent>
-        <TabsContent value="client-schedule">
-          <ScheduleWrapper />
+        <TabsContent value="client-schedule" className="mt-4 z-0">
+          <div className="w-full">
+            <ScheduleWrapper />
+          </div>
         </TabsContent>
-        <TabsContent value="logs">staff shift logs</TabsContent>
-        <TabsContent value="reports">reports</TabsContent>
+        <TabsContent value="logs" className="mt-4 z-0">
+          <div className="w-full">staff shift logs</div>
+        </TabsContent>
+        <TabsContent value="reports" className="mt-4 z-0">
+          <div className="w-full">reports</div>
+        </TabsContent>
       </Tabs>
     </div>
   );
