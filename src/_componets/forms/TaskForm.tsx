@@ -133,10 +133,10 @@ function TaskForm() {
   }, []);
 
   return (
-    <div>
+    <div className="w-full px-2 sm:px-0">
       <form
         onSubmit={handleAddTask}
-        className="flex-1 bg-white p-8 rounded-xl shadow-lg space-y-5 border border-purple-200 w-full overflow-y-auto"
+        className="flex-1 bg-white p-4 sm:p-8 rounded-xl shadow-lg space-y-5 border border-purple-200 w-full overflow-y-auto"
       >
         {/* Description Field */}
         <div>
