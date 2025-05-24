@@ -60,7 +60,7 @@ function Header() {
 
   return (
     <header className="bg-gradient-to-r from-blue-900 to-indigo-800 shadow-lg">
-      <div className="relative container mx-auto px-6 py-4 flex items-center justify-between w-full">
+      <div className="relative w-full max-w-none px-4 sm:px-6 py-4 flex items-center justify-between">
         {/* Left: Logo and App Name */}
         <div
           className="flex items-center space-x-3 flex-1 hover:cursor-pointer"
@@ -86,8 +86,8 @@ function Header() {
           {/* Nav Menu */}
           <nav
             className={`
-              ${menuOpen ? 'block' : 'hidden'} 
-              absolute top-full left-0 w-full bg-blue-900 z-50
+              ${menuOpen ? 'flex flex-col' : 'hidden'} 
+              absolute top-full left-0 right-0 w-full max-w-none bg-blue-900 z-50
               md:z-auto md:static md:bg-transparent
               md:flex md:items-center
               space-y-4 md:space-y-0 md:space-x-6
