@@ -48,27 +48,27 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
     key: keyof ScheduleInsert,
     value: ScheduleInsert[keyof ScheduleInsert]
   ) => {
-    setForms((prev) => prev.map((f, i) => (i === idx ? { ...f, [key]: value } : f)));
+    setForms(prev => prev.map((f, i) => (i === idx ? { ...f, [key]: value } : f)));
   };
 
   /** Save current filled forms locally and reset UI to a blank entry */
   const addForm = () => {
     // Only push non‑empty forms (simple title check)
-    const filled = forms.filter((f) => f.title.trim() !== '');
+    const filled = forms.filter(f => f.title.trim() !== '');
     if (filled.length) {
-      setSavedSchedules((prev) => [...prev, ...filled]);
+      setSavedSchedules(prev => [...prev, ...filled]);
     }
     // Reset with one blank schedule
     setForms([{ ...blank }]);
   };
 
   /** Remove a schedule form */
-  const removeForm = (idx: number) => setForms((prev) => prev.filter((_, i) => i !== idx));
+  const removeForm = (idx: number) => setForms(prev => prev.filter((_, i) => i !== idx));
 
   /** Submit handler: send all schedules in one batch */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = [...savedSchedules, ...forms.filter((f) => f.title.trim() !== '')];
+    const payload = [...savedSchedules, ...forms.filter(f => f.title.trim() !== '')];
     if (!payload.length) return;
     // Show a loading toast and keep its id so we can update it
     const toastId = toast.loading('Saving…');
@@ -118,20 +118,20 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
             <legend className="px-2 text-purple-700 font-semibold">Schedule {idx + 1}</legend>
 
             {/* Resident & Group Home */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4">
               <label className="flex flex-col text-sm">
                 <span className="text-purple-600">Resident</span>
 
                 <Select
                   value={f.residentId ? f.residentId.toString() : ''}
-                  onValueChange={(val) => updateField(idx, 'residentId', Number(val))}
+                  onValueChange={val => updateField(idx, 'residentId', Number(val))}
                 >
-                  <SelectTrigger className="w-[180px] h-[28px] border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500">
+                  <SelectTrigger className="w-full h-[32px] border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500">
                     <SelectValue placeholder="Select Resident" />
                   </SelectTrigger>
 
                   <SelectContent>
-                    {residents.map((resident) => (
+                    {residents.map(resident => (
                       <SelectItem key={resident.id} value={resident.id.toString()}>
                         {resident.firstName} {resident.lastName}
                       </SelectItem>
@@ -146,7 +146,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                   type="number"
                   readOnly
                   value={groupHomeId}
-                  className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
+                  className="w-full border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                 />
               </label>
             </div>
@@ -157,7 +157,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
               <input
                 type="text"
                 value={f.title}
-                onChange={(e) => updateField(idx, 'title', e.target.value)}
+                onChange={e => updateField(idx, 'title', e.target.value)}
                 className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                 required
               />
@@ -168,19 +168,19 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
               <span className="text-purple-600">Description</span>
               <textarea
                 value={f.description}
-                onChange={(e) => updateField(idx, 'description', e.target.value)}
+                onChange={e => updateField(idx, 'description', e.target.value)}
                 className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500 min-h-[80px]"
               />
             </label>
 
             {/* Time range */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="flex flex-col text-sm">
                 <span className="text-purple-600">Start Time</span>
                 <input
                   type="datetime-local"
                   value={f.start_time.toISOString().slice(0, 16)}
-                  onChange={(e) => updateField(idx, 'start_time', new Date(e.target.value))}
+                  onChange={e => updateField(idx, 'start_time', new Date(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
@@ -191,7 +191,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <input
                   type="datetime-local"
                   value={f.end_time.toISOString().slice(0, 16)}
-                  onChange={(e) => updateField(idx, 'end_time', new Date(e.target.value))}
+                  onChange={e => updateField(idx, 'end_time', new Date(e.target.value))}
                   className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
@@ -199,12 +199,12 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
             </div>
 
             {/* Recurring & Type */}
-            <div className="grid grid-cols-2 gap-4 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={f.is_recurring}
-                  onChange={(e) => updateField(idx, 'is_recurring', e.target.checked)}
+                  onChange={e => updateField(idx, 'is_recurring', e.target.checked)}
                   className="accent-purple-600"
                 />
                 <span className="text-sm text-purple-700">Is Recurring</span>
@@ -214,7 +214,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
                 <span className="text-purple-600">Schedule Type</span>
                 <select
                   value={f.schedule_type}
-                  onChange={(e) =>
+                  onChange={e =>
                     updateField(
                       idx,
                       'schedule_type',
@@ -235,7 +235,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
               <span className="text-purple-600">Notes</span>
               <textarea
                 value={f.notes ?? ''}
-                onChange={(e) => updateField(idx, 'notes', e.target.value)}
+                onChange={e => updateField(idx, 'notes', e.target.value)}
                 className="border rounded px-2 py-1 focus:border-purple-500 focus:ring-purple-500 min-h-[60px]"
               />
             </label>
@@ -254,11 +254,11 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
         ))}
 
         {/* Add another schedule */}
-        <div className="sticky bottom-0 left-0 right-0 bg-white py-2 flex justify-between items-center">
+        <div className="sticky bottom-0 left-0 right-0 bg-white py-2 flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center">
           <button
             type="button"
             onClick={addForm}
-            className="cursor-pointer text-purple-500 hover:text-purple-700 border border-purple-500 hover:border-purple-700 rounded px-3 py-1 text-sm"
+            className="w-full sm:w-auto cursor-pointer text-purple-500 hover:text-purple-700 border border-purple-500 hover:border-purple-700 rounded px-3 py-1 text-sm"
           >
             Save &amp; Add another
           </button>
@@ -266,7 +266,7 @@ export default function ScheduleForm({ onSubmit }: ScheduleFormProps) {
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded shadow"
+            className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded shadow"
           >
             {isLoading ? 'Saving…' : 'Save Schedules'}
           </button>
