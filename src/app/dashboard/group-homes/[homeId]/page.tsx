@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskList from '@/_componets/tasks/TaskList';
 import { ScheduleWrapper } from '@/_componets/schedules/ScheduleWrapper';
+import IncidentReportForm from '@/_componets/forms/IncidentReportForm';
 
 type TabKey = 'clients' | 'other' | 'client-schedule' | 'logs' | 'reports';
 
@@ -225,7 +226,9 @@ export default function Page() {
           <div className="w-full">staff shift logs</div>
         </TabsContent>
         <TabsContent value="reports" className="mt-4 z-0">
-          <div className="w-full">reports</div>
+          <div className="w-full">
+            <IncidentReportForm />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
