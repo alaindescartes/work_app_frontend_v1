@@ -635,6 +635,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Select
                 value={form.workflowStatus}
                 onValueChange={v => updateField('workflowStatus', v)}
+                disabled={supervisorSectionDisabled}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -677,6 +678,14 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 onChange={e => updateField('correctiveActions', e.target.value)}
               />
             </div>
+            <div className="flex items-center">
+              <SwitchField
+                label="Follow‑Up Required"
+                value={form.followUpRequired}
+                onChange={v => updateField('followUpRequired', v)}
+                disabled={supervisorSectionDisabled}
+              />
+            </div>
           </div>
         </fieldset>
       </section>
@@ -699,13 +708,16 @@ type SwitchFieldProps = {
   label: string;
   value: boolean;
   onChange: (val: boolean) => void;
+  disabled?: boolean;
 };
 
-function SwitchField({ label, value, onChange }: SwitchFieldProps) {
+function SwitchField({ label, value, onChange, disabled = false }: SwitchFieldProps) {
   return (
     <div className="flex items-center gap-2">
-      <Switch checked={value} onCheckedChange={onChange} id={label} />
-      <Label htmlFor={label}>{label}</Label>
+      <Switch checked={value} onCheckedChange={onChange} id={label} disabled={disabled} />
+      <Label htmlFor={label} className={disabled ? 'opacity-50 cursor-not-allowed' : undefined}>
+        {label}
+      </Label>
     </div>
   );
 }
