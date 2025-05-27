@@ -154,7 +154,10 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
   /* ------------------------------------------------------------------ */
   const handleClientSelect = (id: number) => {
     const client = groupHome.residents.find((r) => r.id === id);
-    setSelectedClient({ name: client?.firstName + '' + client?.lastName, id: client?.id || 0 });
+    setSelectedClient({
+      name: client ? `${client.firstName} ${client.lastName}` : '',
+      id: client?.id || 0,
+    });
   };
 
   /* ------------------------------------------------------------------ */
@@ -306,6 +309,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
       setForm(buildInitialForm());
       setSelectedClient({ name: '', id: 0 });
     } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') console.error(err);
       toast('Failed to save incident report', {
         style: { backgroundColor: 'red', color: 'white' },
       });
@@ -313,7 +317,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
       setIsLoading(false);
     }
   };
-
+  console.log(isLoading);
   /* ---------------------------------------------------------------------- */
   /*  Render                                                                 */
   /* ---------------------------------------------------------------------- */
@@ -323,6 +327,9 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
       onSubmit={handleSubmit}
     >
       <h2 className="text-3xl font-semibold">Incident Report</h2>
+      {selectedClient.name && (
+        <p className="text-sm text-gray-500">Selected Resident: {selectedClient.name}</p>
+      )}
       {/* ╔════════ Staff‑editable part (disabled for supervisors) ════════╗ */}
       <fieldset
         disabled={staffSectionDisabled}
@@ -917,7 +924,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
       {/* ======================= Submit placeholder ===================== */}
       <div className="pt-6">
         <Button type="submit" disabled={isLoading}>
-          Save
+          {isLoading ? 'Saving...' : 'Save Report'}
         </Button>
       </div>
     </form>
