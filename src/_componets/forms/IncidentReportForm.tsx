@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { IncidentReportInterface } from '@/interfaces/incidentReportInterface';
+import { toast } from 'sonner';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+
+/* -------------------------------------------------------------------------- */
+/*  Shared types                                                               */
+/* -------------------------------------------------------------------------- */
+type Witness = { name: string; contact: string; statement: string };
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -27,29 +36,32 @@ function L({ children }: { children: string }) {
 /* -------------------------------------------------------------------------- */
 
 type UserRole = 'staff' | 'supervisor';
+type clientInfo = { name: string; id: number };
 /**
- * @param role – if 'staff' (default) the staff sections are enabled and supervisor
+ * @param role – if 'staff' (default) the staff sections are enabled, and supervisor
  *               sections are readonly; if 'supervisor' the inverse is true.
  */
 export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole }) {
   /* ------------------------------------------------------------------ */
   /*  Role‑based section toggles                                         */
   /* ------------------------------------------------------------------ */
-  // If role is 'supervisor', staff sections are disabled; if 'staff', supervisor sections are disabled
+  // If a role is 'supervisor', staff sections are disabled; if 'staff', supervisor sections are disabled
   const staffSectionDisabled = role === 'supervisor';
   const supervisorSectionDisabled = role === 'staff';
 
-  /* ---------------------------------------------------------------------- */
-  /*  State                                                                  */
-  /* ---------------------------------------------------------------------- */
-  const [form, setForm] = useState({
+  const groupHome = useSelector((state: RootState) => state.grouphome);
+  const staffInfo = useSelector((state: RootState) => state.user.userInfo);
+  const [selectedClient, setSelectedClient] = useState<clientInfo>({ name: '', id: 0 });
+
+  // Helper to build a fresh empty form
+  const buildInitialForm = (): IncidentReportInterface => ({
     /* Identifiers */
-    groupHomeId: '',
-    residentId: '',
-    staffId: '',
+    groupHomeId: groupHome?.grouphomeInfo?.id || 0,
+    residentId: 0,
+    staffId: staffInfo?.staffId || 0,
     incidentDateTime: '',
-    incidentType: '',
-    severityLevel: '',
+    incidentType: 'Injury',
+    severityLevel: 'Minor',
     workflowStatus: 'Draft',
 
     /* Descriptions */
@@ -101,8 +113,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
     notificationName: '',
     notificationTime: '',
     notificationNotes: '',
-    /* Emergency Services Details */
-    emergencyServiceType: '',
+    emergencyServiceType: 'Ambulance',
     emergencyServiceResponderName: '',
     emergencyServiceBadgeNumber: '',
     emergencyServiceFileNumber: '',
@@ -110,37 +121,207 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
     /* Witnesses */
     witnesses: [{ name: '', contact: '', statement: '' }],
 
-    /* Staff completing report details */
-    staffName: '',
+    /* Staff completion */
+    staffName: staffInfo?.firstName + ' ' + staffInfo?.lastName,
     staffPosition: '',
     reportDate: '',
   });
 
-  const updateField = (field: string, value: unknown) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+  /* ---------------------------------------------------------------------- */
+  /*  State                                                                  */
+  /* ---------------------------------------------------------------------- */
+  const [form, setForm] = useState<IncidentReportInterface>(buildInitialForm());
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const updateWitnessField = (
-    index: number,
-    field: keyof (typeof form.witnesses)[0],
-    value: string
-  ) =>
-    setForm(prev => {
-      const witnesses = [...prev.witnesses];
+  const updateField = (field: string, value: unknown) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+  const updateWitnessField = (index: number, field: keyof Witness, value: string) =>
+    setForm((prev) => {
+      const witnesses = [...(prev.witnesses ?? [])];
       witnesses[index] = { ...witnesses[index], [field]: value };
       return { ...prev, witnesses };
     });
 
   const addWitness = () =>
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      witnesses: [...prev.witnesses, { name: '', contact: '', statement: '' }],
+      witnesses: [...(prev.witnesses ?? []), { name: '', contact: '', statement: '' }],
     }));
+
+  /* ------------------------------------------------------------------ */
+  /*  handles selection of clients                                       */
+  /* ------------------------------------------------------------------ */
+  const handleClientSelect = (id: number) => {
+    const client = groupHome.residents.find((r) => r.id === id);
+    setSelectedClient({ name: client?.firstName + '' + client?.lastName, id: client?.id || 0 });
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Submit handler                                                     */
+  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------ */
+  /*  Submit handler – sends *only* staff‑editable fields               */
+  /* ------------------------------------------------------------------ */
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const {
+      /* Identifiers */
+      groupHomeId,
+      residentId,
+      staffId,
+
+      /* Core incident info */
+      incidentDateTime,
+      incidentType,
+      severityLevel,
+
+      /* Descriptions & context */
+      description,
+      preIncidentContext,
+      postIncidentContext,
+      nearMissDescription,
+
+      /* Immediate actions */
+      immediateActions,
+
+      /* Follow‑up flag (manager adds dates later) */
+      followUpRequired,
+
+      /* Fall‑specific */
+      fallLocation,
+      fallWitnessed,
+      previousFall,
+      injuriesSustained,
+      injuriesDescription,
+      firstAidProvided,
+      firstAidDetails,
+      emergencyServicesContacted,
+      mobilityAidsInUse,
+      properFootwear,
+      fallContributingFactors,
+
+      /* Medication incident */
+      medicationScheduledDateTime,
+      medicationIncidentType,
+      medicationIncidentDescription,
+      clientReceivedMedication,
+      pharmacistName,
+      pharmacistConversationTime,
+      pharmacistInstructions,
+
+      /* Notifications */
+      emergencyServicesNotified,
+      familyGuardianNotified,
+      siteSupervisorNotified,
+      onCallSupervisorNotified,
+      crisisTeamNotified,
+      emergencyContactNotified,
+      notificationName,
+      notificationTime,
+      notificationNotes,
+      emergencyServiceType,
+      emergencyServiceResponderName,
+      emergencyServiceBadgeNumber,
+      emergencyServiceFileNumber,
+
+      /* Witnesses & staff completion */
+      witnesses,
+      staffName,
+      staffPosition,
+      reportDate,
+    } = form;
+
+    const staffPayload = {
+      groupHomeId,
+      residentId,
+      staffId,
+      incidentDateTime,
+      incidentType,
+      severityLevel,
+      description,
+      preIncidentContext,
+      postIncidentContext,
+      nearMissDescription,
+      immediateActions,
+      followUpRequired,
+      fallLocation,
+      fallWitnessed,
+      previousFall,
+      injuriesSustained,
+      injuriesDescription,
+      firstAidProvided,
+      firstAidDetails,
+      emergencyServicesContacted,
+      mobilityAidsInUse,
+      properFootwear,
+      fallContributingFactors,
+      medicationScheduledDateTime,
+      medicationIncidentType,
+      medicationIncidentDescription,
+      clientReceivedMedication,
+      pharmacistName,
+      pharmacistConversationTime,
+      pharmacistInstructions,
+      emergencyServicesNotified,
+      familyGuardianNotified,
+      siteSupervisorNotified,
+      onCallSupervisorNotified,
+      crisisTeamNotified,
+      emergencyContactNotified,
+      notificationName,
+      notificationTime,
+      notificationNotes,
+      emergencyServiceType,
+      emergencyServiceResponderName,
+      emergencyServiceBadgeNumber,
+      emergencyServiceFileNumber,
+      witnesses,
+      staffName,
+      staffPosition,
+      reportDate,
+    };
+
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reports/save-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(staffPayload),
+        credentials: 'include',
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        toast(json.message || 'Failed to save incident report', {
+          style: { backgroundColor: 'red', color: 'white' },
+        });
+        return;
+      }
+
+      toast('Incident report saved successfully', {
+        style: { backgroundColor: 'green', color: 'white' },
+      });
+      setForm(buildInitialForm());
+      setSelectedClient({ name: '', id: 0 });
+    } catch (err: unknown) {
+      toast('Failed to save incident report', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   /* ---------------------------------------------------------------------- */
   /*  Render                                                                 */
   /* ---------------------------------------------------------------------- */
   return (
-    <form className="space-y-10 w-full p-6 rounded-lg bg-white shadow-sm border">
+    <form
+      className="space-y-10 w-full p-6 rounded-lg bg-white shadow-sm border"
+      onSubmit={handleSubmit}
+    >
       <h2 className="text-3xl font-semibold">Incident Report</h2>
       {/* ╔════════ Staff‑editable part (disabled for supervisors) ════════╗ */}
       <fieldset
@@ -155,25 +336,44 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
             <div>
               <L>Group Home ID</L>
               <Input
+                type="number"
                 value={form.groupHomeId}
-                onChange={e => updateField('groupHomeId', e.target.value)}
-                placeholder="GH‑001"
+                onChange={(e) => updateField('groupHomeId', Number(e.target.value))}
+                placeholder={groupHome.grouphomeInfo.name}
+                disabled={true}
               />
             </div>
             <div>
-              <L>Resident ID</L>
-              <Input
-                value={form.residentId}
-                onChange={e => updateField('residentId', e.target.value)}
-                placeholder="R‑123"
-              />
+              <L>Resident</L>
+              <Select
+                value={form.residentId ? form.residentId.toString() : ''}
+                onValueChange={(val) => {
+                  const id = Number(val);
+                  handleClientSelect(id); // keep the UI selection state
+                  updateField('residentId', id); // sync with form state
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Resident" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {groupHome.residents.map((resident) => (
+                    <SelectItem key={resident.id} value={resident.id.toString()}>
+                      {resident.firstName} {resident.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <L>Reporter (Staff) ID</L>
               <Input
+                type="number"
                 value={form.staffId}
-                onChange={e => updateField('staffId', e.target.value)}
-                placeholder="ST‑045"
+                onChange={(e) => updateField('staffId', Number(e.target.value))}
+                placeholder={staffInfo.firstName + ' ' + staffInfo.lastName}
+                disabled={true}
               />
             </div>
             <div>
@@ -181,12 +381,15 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Input
                 type="datetime-local"
                 value={form.incidentDateTime}
-                onChange={e => updateField('incidentDateTime', e.target.value)}
+                onChange={(e) => updateField('incidentDateTime', e.target.value)}
               />
             </div>
             <div>
               <L>Incident Type</L>
-              <Select value={form.incidentType} onValueChange={v => updateField('incidentType', v)}>
+              <Select
+                value={form.incidentType}
+                onValueChange={(v) => updateField('incidentType', v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -205,7 +408,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <L>Severity Level</L>
               <Select
                 value={form.severityLevel}
-                onValueChange={v => updateField('severityLevel', v)}
+                onValueChange={(v) => updateField('severityLevel', v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select severity" />
@@ -227,7 +430,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Textarea
                 rows={4}
                 value={form.description}
-                onChange={e => updateField('description', e.target.value)}
+                onChange={(e) => updateField('description', e.target.value)}
                 placeholder="Describe what happened..."
               />
             </div>
@@ -236,7 +439,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Textarea
                 rows={3}
                 value={form.preIncidentContext}
-                onChange={e => updateField('preIncidentContext', e.target.value)}
+                onChange={(e) => updateField('preIncidentContext', e.target.value)}
               />
             </div>
             <div>
@@ -244,7 +447,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Textarea
                 rows={3}
                 value={form.postIncidentContext}
-                onChange={e => updateField('postIncidentContext', e.target.value)}
+                onChange={(e) => updateField('postIncidentContext', e.target.value)}
               />
             </div>
             {form.incidentType === 'NearMiss' && (
@@ -253,7 +456,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Textarea
                   rows={3}
                   value={form.nearMissDescription}
-                  onChange={e => updateField('nearMissDescription', e.target.value)}
+                  onChange={(e) => updateField('nearMissDescription', e.target.value)}
                   placeholder="Describe the near miss..."
                 />
               </div>
@@ -270,7 +473,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <L>Location of Fall</L>
                 <Input
                   value={form.fallLocation}
-                  onChange={e => updateField('fallLocation', e.target.value)}
+                  onChange={(e) => updateField('fallLocation', e.target.value)}
                   placeholder="Bedroom, bathroom, etc."
                 />
               </div>
@@ -278,19 +481,19 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <SwitchField
                 label="Fall Witnessed by Staff"
                 value={form.fallWitnessed}
-                onChange={v => updateField('fallWitnessed', v)}
+                onChange={(v) => updateField('fallWitnessed', v)}
               />
 
               <SwitchField
                 label="Previous Fall within 30 Days"
                 value={form.previousFall}
-                onChange={v => updateField('previousFall', v)}
+                onChange={(v) => updateField('previousFall', v)}
               />
 
               <SwitchField
                 label="Client Sustained Injuries"
                 value={form.injuriesSustained}
-                onChange={v => updateField('injuriesSustained', v)}
+                onChange={(v) => updateField('injuriesSustained', v)}
               />
 
               {form.injuriesSustained && (
@@ -299,7 +502,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                   <Textarea
                     rows={2}
                     value={form.injuriesDescription}
-                    onChange={e => updateField('injuriesDescription', e.target.value)}
+                    onChange={(e) => updateField('injuriesDescription', e.target.value)}
                   />
                 </div>
               )}
@@ -307,7 +510,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <SwitchField
                 label="First Aid Provided"
                 value={form.firstAidProvided}
-                onChange={v => updateField('firstAidProvided', v)}
+                onChange={(v) => updateField('firstAidProvided', v)}
               />
 
               {form.firstAidProvided && (
@@ -316,7 +519,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                   <Textarea
                     rows={2}
                     value={form.firstAidDetails}
-                    onChange={e => updateField('firstAidDetails', e.target.value)}
+                    onChange={(e) => updateField('firstAidDetails', e.target.value)}
                   />
                 </div>
               )}
@@ -324,19 +527,19 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <SwitchField
                 label="Emergency Services Contacted"
                 value={form.emergencyServicesContacted}
-                onChange={v => updateField('emergencyServicesContacted', v)}
+                onChange={(v) => updateField('emergencyServicesContacted', v)}
               />
 
               <SwitchField
                 label="Mobility Aids in Use"
                 value={form.mobilityAidsInUse}
-                onChange={v => updateField('mobilityAidsInUse', v)}
+                onChange={(v) => updateField('mobilityAidsInUse', v)}
               />
 
               <SwitchField
                 label="Proper Footwear Worn"
                 value={form.properFootwear}
-                onChange={v => updateField('properFootwear', v)}
+                onChange={(v) => updateField('properFootwear', v)}
               />
 
               <div className="sm:col-span-2">
@@ -344,7 +547,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Textarea
                   rows={3}
                   value={form.fallContributingFactors}
-                  onChange={e => updateField('fallContributingFactors', e.target.value)}
+                  onChange={(e) => updateField('fallContributingFactors', e.target.value)}
                 />
               </div>
             </div>
@@ -362,7 +565,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Input
                   type="datetime-local"
                   value={form.medicationScheduledDateTime}
-                  onChange={e => updateField('medicationScheduledDateTime', e.target.value)}
+                  onChange={(e) => updateField('medicationScheduledDateTime', e.target.value)}
                 />
               </div>
 
@@ -370,7 +573,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <L>Type of Medication Incident</L>
                 <Select
                   value={form.medicationIncidentType}
-                  onValueChange={v => updateField('medicationIncidentType', v)}
+                  onValueChange={(v) => updateField('medicationIncidentType', v)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -390,7 +593,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                       'NearMiss',
                       'SupplyNotAvailable',
                       'Other',
-                    ].map(t => (
+                    ].map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>
@@ -404,21 +607,21 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Textarea
                   rows={4}
                   value={form.medicationIncidentDescription}
-                  onChange={e => updateField('medicationIncidentDescription', e.target.value)}
+                  onChange={(e) => updateField('medicationIncidentDescription', e.target.value)}
                 />
               </div>
 
               <SwitchField
                 label="Did the Client Receive Medications?"
                 value={form.clientReceivedMedication}
-                onChange={v => updateField('clientReceivedMedication', v)}
+                onChange={(v) => updateField('clientReceivedMedication', v)}
               />
 
               <div>
                 <L>Pharmacist Name</L>
                 <Input
                   value={form.pharmacistName}
-                  onChange={e => updateField('pharmacistName', e.target.value)}
+                  onChange={(e) => updateField('pharmacistName', e.target.value)}
                 />
               </div>
 
@@ -427,7 +630,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Input
                   type="time"
                   value={form.pharmacistConversationTime}
-                  onChange={e => updateField('pharmacistConversationTime', e.target.value)}
+                  onChange={(e) => updateField('pharmacistConversationTime', e.target.value)}
                 />
               </div>
 
@@ -436,7 +639,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Textarea
                   rows={3}
                   value={form.pharmacistInstructions}
-                  onChange={e => updateField('pharmacistInstructions', e.target.value)}
+                  onChange={(e) => updateField('pharmacistInstructions', e.target.value)}
                 />
               </div>
             </div>
@@ -450,32 +653,32 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
             <SwitchField
               label="Emergency Services"
               value={form.emergencyServicesNotified}
-              onChange={v => updateField('emergencyServicesNotified', v)}
+              onChange={(v) => updateField('emergencyServicesNotified', v)}
             />
             <SwitchField
               label="Family / Guardian"
               value={form.familyGuardianNotified}
-              onChange={v => updateField('familyGuardianNotified', v)}
+              onChange={(v) => updateField('familyGuardianNotified', v)}
             />
             <SwitchField
               label="Site Supervisor"
               value={form.siteSupervisorNotified}
-              onChange={v => updateField('siteSupervisorNotified', v)}
+              onChange={(v) => updateField('siteSupervisorNotified', v)}
             />
             <SwitchField
               label="On‑Call Supervisor"
               value={form.onCallSupervisorNotified}
-              onChange={v => updateField('onCallSupervisorNotified', v)}
+              onChange={(v) => updateField('onCallSupervisorNotified', v)}
             />
             <SwitchField
               label="Crisis Team"
               value={form.crisisTeamNotified}
-              onChange={v => updateField('crisisTeamNotified', v)}
+              onChange={(v) => updateField('crisisTeamNotified', v)}
             />
             <SwitchField
               label="Emergency Contact on File"
               value={form.emergencyContactNotified}
-              onChange={v => updateField('emergencyContactNotified', v)}
+              onChange={(v) => updateField('emergencyContactNotified', v)}
             />
           </div>
 
@@ -485,7 +688,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <L>Service Type</L>
                 <Select
                   value={form.emergencyServiceType}
-                  onValueChange={v => updateField('emergencyServiceType', v)}
+                  onValueChange={(v) => updateField('emergencyServiceType', v)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select service" />
@@ -502,7 +705,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <L>Responder Name</L>
                 <Input
                   value={form.emergencyServiceResponderName}
-                  onChange={e => updateField('emergencyServiceResponderName', e.target.value)}
+                  onChange={(e) => updateField('emergencyServiceResponderName', e.target.value)}
                   placeholder="Officer / Paramedic"
                 />
               </div>
@@ -511,7 +714,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <L>Badge / ID Number</L>
                 <Input
                   value={form.emergencyServiceBadgeNumber}
-                  onChange={e => updateField('emergencyServiceBadgeNumber', e.target.value)}
+                  onChange={(e) => updateField('emergencyServiceBadgeNumber', e.target.value)}
                   placeholder="Badge #"
                 />
               </div>
@@ -520,7 +723,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <L>File / Case Number</L>
                 <Input
                   value={form.emergencyServiceFileNumber}
-                  onChange={e => updateField('emergencyServiceFileNumber', e.target.value)}
+                  onChange={(e) => updateField('emergencyServiceFileNumber', e.target.value)}
                   placeholder="Case #"
                 />
               </div>
@@ -532,7 +735,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <L>Name of Person Spoken To / Message Left</L>
               <Input
                 value={form.notificationName}
-                onChange={e => updateField('notificationName', e.target.value)}
+                onChange={(e) => updateField('notificationName', e.target.value)}
               />
             </div>
             <div>
@@ -540,7 +743,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Input
                 type="time"
                 value={form.notificationTime}
-                onChange={e => updateField('notificationTime', e.target.value)}
+                onChange={(e) => updateField('notificationTime', e.target.value)}
               />
             </div>
             <div className="sm:col-span-3">
@@ -548,7 +751,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Textarea
                 rows={3}
                 value={form.notificationNotes}
-                onChange={e => updateField('notificationNotes', e.target.value)}
+                onChange={(e) => updateField('notificationNotes', e.target.value)}
               />
             </div>
           </div>
@@ -562,14 +765,14 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <L>Staff Name</L>
               <Input
                 value={form.staffName}
-                onChange={e => updateField('staffName', e.target.value)}
+                onChange={(e) => updateField('staffName', e.target.value)}
               />
             </div>
             <div>
               <L>Position</L>
               <Input
                 value={form.staffPosition}
-                onChange={e => updateField('staffPosition', e.target.value)}
+                onChange={(e) => updateField('staffPosition', e.target.value)}
               />
             </div>
             <div>
@@ -577,7 +780,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Input
                 type="date"
                 value={form.reportDate}
-                onChange={e => updateField('reportDate', e.target.value)}
+                onChange={(e) => updateField('reportDate', e.target.value)}
               />
             </div>
           </div>
@@ -587,20 +790,20 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
         <section className="space-y-4">
           <h3 className="text-xl font-semibold">Witnesses</h3>
 
-          {form.witnesses.map((w, idx) => (
+          {(form.witnesses ?? []).map((w, idx) => (
             <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-4 border p-4 rounded-md">
               <div>
                 <L>Witness Name</L>
                 <Input
                   value={w.name}
-                  onChange={e => updateWitnessField(idx, 'name', e.target.value)}
+                  onChange={(e) => updateWitnessField(idx, 'name', e.target.value)}
                 />
               </div>
               <div>
                 <L>Contact Info</L>
                 <Input
                   value={w.contact}
-                  onChange={e => updateWitnessField(idx, 'contact', e.target.value)}
+                  onChange={(e) => updateWitnessField(idx, 'contact', e.target.value)}
                 />
               </div>
               <div className="sm:col-span-3">
@@ -608,7 +811,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
                 <Textarea
                   rows={2}
                   value={w.statement}
-                  onChange={e => updateWitnessField(idx, 'statement', e.target.value)}
+                  onChange={(e) => updateWitnessField(idx, 'statement', e.target.value)}
                 />
               </div>
             </div>
@@ -629,12 +832,12 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
           className={supervisorSectionDisabled ? 'opacity-50 cursor-not-allowed' : undefined}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Workflow Status select */}
+            {/* Workflow Status selects */}
             <div>
               <L>Workflow Status</L>
               <Select
                 value={form.workflowStatus}
-                onValueChange={v => updateField('workflowStatus', v)}
+                onValueChange={(v) => updateField('workflowStatus', v)}
                 disabled={supervisorSectionDisabled}
               >
                 <SelectTrigger>
@@ -655,7 +858,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Input
                 type="datetime-local"
                 value={form.supervisorReviewedAt}
-                onChange={e => updateField('supervisorReviewedAt', e.target.value)}
+                onChange={(e) => updateField('supervisorReviewedAt', e.target.value)}
               />
             </div>
           </div>
@@ -667,7 +870,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Textarea
                 rows={3}
                 value={form.supervisorNotes}
-                onChange={e => updateField('supervisorNotes', e.target.value)}
+                onChange={(e) => updateField('supervisorNotes', e.target.value)}
               />
             </div>
             <div>
@@ -675,15 +878,36 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
               <Textarea
                 rows={3}
                 value={form.correctiveActions}
-                onChange={e => updateField('correctiveActions', e.target.value)}
+                onChange={(e) => updateField('correctiveActions', e.target.value)}
               />
             </div>
             <div className="flex items-center">
               <SwitchField
                 label="Follow‑Up Required"
                 value={form.followUpRequired}
-                onChange={v => updateField('followUpRequired', v)}
+                onChange={(v) => updateField('followUpRequired', v)}
                 disabled={supervisorSectionDisabled}
+              />
+            </div>
+          </div>
+
+          {/* Follow‑up scheduling */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <L>Follow‑Up Due Date</L>
+              <Input
+                type="date"
+                value={form.followUpDueDate}
+                onChange={(e) => updateField('followUpDueDate', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <L>Follow‑Up Completed At</L>
+              <Input
+                type="datetime-local"
+                value={form.followUpCompletedAt}
+                onChange={(e) => updateField('followUpCompletedAt', e.target.value)}
               />
             </div>
           </div>
@@ -692,8 +916,8 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
 
       {/* ======================= Submit placeholder ===================== */}
       <div className="pt-6">
-        <Button type="submit" disabled>
-          Save (disabled)
+        <Button type="submit" disabled={isLoading}>
+          Save
         </Button>
       </div>
     </form>
@@ -706,7 +930,7 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
 
 type SwitchFieldProps = {
   label: string;
-  value: boolean;
+  value?: boolean;
   onChange: (val: boolean) => void;
   disabled?: boolean;
 };
@@ -714,7 +938,7 @@ type SwitchFieldProps = {
 function SwitchField({ label, value, onChange, disabled = false }: SwitchFieldProps) {
   return (
     <div className="flex items-center gap-2">
-      <Switch checked={value} onCheckedChange={onChange} id={label} disabled={disabled} />
+      <Switch checked={!!value} onCheckedChange={onChange} id={label} disabled={disabled} />
       <Label htmlFor={label} className={disabled ? 'opacity-50 cursor-not-allowed' : undefined}>
         {label}
       </Label>

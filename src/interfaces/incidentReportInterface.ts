@@ -14,9 +14,9 @@
  */
 export interface IncidentReportInterface {
   /* ---------- core identifiers (required) ---------- */
-  groupHomeId: string; // which site the incident occurred in
-  residentId: string; // primary person affected
-  staffId: string; // reporter / author of the form
+  groupHomeId: number; // which site the incident occurred in
+  residentId: number; // primary person affected
+  staffId: number; // reporter / author of the form
   incidentDateTime: string; // ISO‑8601 timestamp
   incidentType: 'Injury' | 'Fall' | 'Aggression' | 'Medication' | 'Property' | 'NearMiss' | 'Other';
   severityLevel: 'Minor' | 'Moderate' | 'Severe' | 'Critical';
@@ -91,8 +91,8 @@ export interface IncidentReportInterface {
   reportDate?: string;
 
   /* ---------- audit‑trail fields ---------- */
-  createdAt?: string;
-  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
@@ -109,15 +109,15 @@ export type IncidentReportFetch = IncidentReportInterface;
 export type IncidentReportInsert = Omit<
   IncidentReportInterface,
   | 'id'
-  | 'createdAt'
-  | 'updatedAt'
+  | 'created_at'
+  | 'updated_at'
   | 'supervisorNotes'
   | 'correctiveActions'
   | 'supervisorReviewedAt'
 > & {
-  groupHomeId: string;
-  residentId: string;
-  staffId: string;
+  groupHomeId: number; // which site the incident occurred in
+  residentId: number; // primary person affected
+  staffId: number;
   incidentDateTime: string;
   incidentType: 'Injury' | 'Fall' | 'Aggression' | 'Medication' | 'Property' | 'NearMiss' | 'Other';
   severityLevel: 'Minor' | 'Moderate' | 'Severe' | 'Critical';
