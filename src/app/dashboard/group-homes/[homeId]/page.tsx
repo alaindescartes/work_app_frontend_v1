@@ -40,6 +40,7 @@ export default function Page() {
 
   useEffect(() => {
     dispatch(resetGrouphomeInfo());
+    setClients([]); // clear previous home's residents until new fetch completes
   }, [params.homeId, dispatch]);
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export default function Page() {
         return;
       }
       const data = await response.json();
-      const filteredClients = clients.filter(client => client.id !== data.resident.id);
+      const filteredClients = clients.filter((client) => client.id !== data.resident.id);
       setClients(filteredClients);
 
       //update client redux
@@ -161,7 +162,7 @@ export default function Page() {
       <Tabs
         value={activeTab}
         className="w-full"
-        onValueChange={value => {
+        onValueChange={(value) => {
           if (isUnsavedChanges && value !== activeTab) {
             toast('You have unsaved changes. Save or discard them before switching tabs.', {
               style: { backgroundColor: 'orange', color: 'white' },
