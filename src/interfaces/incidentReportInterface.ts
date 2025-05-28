@@ -14,9 +14,9 @@
  */
 export interface IncidentReportInterface {
   /* ---------- core identifiers (required) ---------- */
-  groupHomeId: number; // which site the incident occurred in
-  residentId: number; // primary person affected
-  staffId: number; // reporter / author of the form
+  groupHomeId: string; // which site the incident occurred in
+  residentId: string; // primary person affected
+  staffId: string; // reporter / author of the form
   incidentDateTime: string; // ISO‑8601 timestamp
   incidentType: 'Injury' | 'Fall' | 'Aggression' | 'Medication' | 'Property' | 'NearMiss' | 'Other';
   severityLevel: 'Minor' | 'Moderate' | 'Severe' | 'Critical';
@@ -91,8 +91,8 @@ export interface IncidentReportInterface {
   reportDate?: string;
 
   /* ---------- audit‑trail fields ---------- */
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
@@ -109,19 +109,43 @@ export type IncidentReportFetch = IncidentReportInterface;
 export type IncidentReportInsert = Omit<
   IncidentReportInterface,
   | 'id'
-  | 'created_at'
-  | 'updated_at'
+  | 'createdAt'
+  | 'updatedAt'
   | 'supervisorNotes'
   | 'correctiveActions'
   | 'supervisorReviewedAt'
 > & {
-  groupHomeId: number; // which site the incident occurred in
-  residentId: number; // primary person affected
-  staffId: number;
+  groupHomeId: string;
+  residentId: string;
+  staffId: string;
   incidentDateTime: string;
   incidentType: 'Injury' | 'Fall' | 'Aggression' | 'Medication' | 'Property' | 'NearMiss' | 'Other';
   severityLevel: 'Minor' | 'Moderate' | 'Severe' | 'Critical';
   description: string;
   followUpRequired: boolean;
-  workflowStatus: 'Draft';
+  workflowStatus: 'Draft' | 'Submitted' | 'InReview' | 'Closed';
+};
+
+/**
+ * Fields a supervisor is permitted to add / update.
+ * Everything is optional because updates are PATCH-style.
+ */
+type SupervisorEditable = Pick<
+  IncidentReportInterface,
+  | 'workflowStatus'
+  | 'supervisorReviewedAt'
+  | 'supervisorNotes'
+  | 'correctiveActions'
+  | 'followUpRequired'
+  | 'followUpDueDate'
+  | 'followUpCompletedAt'
+>;
+
+/**
+ * Payload shape for PUT/PATCH requests coming *from* a supervisor UI.
+ * • Only supervisor-editable keys are allowed.
+ * • The row’s `id` must be supplied so the backend knows which report to update.
+ */
+export type IncidentReportSupervisorUpdate = Partial<SupervisorEditable> & {
+  id: number; // ← DB primary key (integer)
 };

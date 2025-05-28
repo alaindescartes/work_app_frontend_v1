@@ -23,8 +23,6 @@ function AllGroupHomes() {
       const data = await response.json();
       if (response.ok) {
         setHomes(data.groupHomes);
-      } else {
-        console.log(data.message);
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
