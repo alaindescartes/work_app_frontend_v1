@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import Edit_RemoveGroupHome from '@/_componets/groupHome/Edit_RemoveGroupHome';
 import AddTaskWrapper from '../tasks/AddTaskWrapper';
+import IncidentReportList from '@/_componets/reports/IncidentReportList';
 
 function AdminGrouphoneView() {
   return (
@@ -45,6 +46,17 @@ function AdminGrouphoneView() {
             </AccordionTrigger>
             <AccordionContent>
               <AddTaskWrapper />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        {/*  review pending incident reports*/}
+        <Accordion type="single" collapsible>
+          <AccordionItem value="item-1">
+            <AccordionTrigger className="text-xl font-medium text-purple-800 hover:underline transition-all">
+              Review, Edit or Delete incident reports here
+            </AccordionTrigger>
+            <AccordionContent>
+              <IncidentReportList />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
