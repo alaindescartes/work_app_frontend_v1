@@ -3,6 +3,7 @@ import IncidentReportSubList from './IncidentReportSubList';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { ResidentFetch } from '@/interfaces/clientInterface';
 import { IncidentReportFetch } from '@/interfaces/incidentReportInterface';
+import { useRouter } from 'next/navigation';
 
 export default function IncidentReportList() {
   const [groupHomes, setGroupHomes] = useState<GroupHomeFetch[]>([]);
@@ -10,6 +11,7 @@ export default function IncidentReportList() {
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const [reports, setReports] = useState<IncidentReportFetch[]>([]);
   const [selectedHomeId, setSelectedHomeId] = useState<number | null>(null);
+  const router = useRouter();
 
   // Skeleton loader for homes
   const HomeSkeleton = () => <div className="h-14 bg-gray-200 rounded-md animate-pulse" />;
@@ -125,10 +127,10 @@ export default function IncidentReportList() {
               className="w-full appearance-none pr-8 rounded-md border-gray-300 focus:border-purple-600 focus:ring-purple-600 text-sm p-2"
               value={selectedHomeId ?? ''}
               disabled={loading}
-              onChange={e => setSelectedHomeId(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setSelectedHomeId(e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">— choose a home —</option>
-              {groupHomes.map(h => (
+              {groupHomes.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}
                 </option>

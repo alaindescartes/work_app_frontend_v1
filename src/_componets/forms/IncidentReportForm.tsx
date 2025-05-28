@@ -73,8 +73,6 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
     /* Immediate / follow‑up */
     immediateActions: '',
     followUpRequired: false,
-    followUpDueDate: '',
-    followUpCompletedAt: '',
     supervisorReviewedAt: '',
 
     /* Supervisor review */
@@ -899,25 +897,6 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
           </div>
 
           {/* Follow‑up scheduling */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            <div>
-              <L>Follow‑Up Due Date</L>
-              <Input
-                type="date"
-                value={form.followUpDueDate}
-                onChange={(e) => updateField('followUpDueDate', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <L>Follow‑Up Completed At</L>
-              <Input
-                type="datetime-local"
-                value={form.followUpCompletedAt}
-                onChange={(e) => updateField('followUpCompletedAt', e.target.value)}
-              />
-            </div>
-          </div>
         </fieldset>
       </section>
 

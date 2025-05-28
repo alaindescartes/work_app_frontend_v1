@@ -14,7 +14,7 @@ export default function IncidentReportSubList({ residents, reports }: Props) {
 
   return (
     <div className="space-y-4">
-      {residents.map(resident => (
+      {residents.map((resident) => (
         <div key={resident.id} className="bg-white rounded-lg border border-gray-100 shadow-md p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="h-9 w-9 flex items-center justify-center rounded-full bg-purple-600 text-white font-semibold">
@@ -28,13 +28,13 @@ export default function IncidentReportSubList({ residents, reports }: Props) {
 
           <ul className="flex flex-wrap gap-2">
             {(() => {
-              const residentReports = reports.filter(r => Number(r.residentId) === resident.id);
+              const residentReports = reports.filter((r) => Number(r.residentId) === resident.id);
 
               return residentReports.length > 0 ? (
-                residentReports.map(r => (
+                residentReports.map((r) => (
                   <li key={r.id}>
                     <Link
-                      href={`/reports/${r.id}`}
+                      href={`/dashboard/reports/${r.id}`}
                       className="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium"
                     >
                       {r.incidentType}

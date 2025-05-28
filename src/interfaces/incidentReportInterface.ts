@@ -14,9 +14,9 @@
  */
 export interface IncidentReportInterface {
   /* ---------- core identifiers (required) ---------- */
-  groupHomeId: string; // which site the incident occurred in
-  residentId: string; // primary person affected
-  staffId: string; // reporter / author of the form
+  groupHomeId: number; // which site the incident occurred in
+  residentId: number; // primary person affected
+  staffId: number; // reporter / author of the form
   incidentDateTime: string; // ISO‑8601 timestamp
   incidentType: 'Injury' | 'Fall' | 'Aggression' | 'Medication' | 'Property' | 'NearMiss' | 'Other';
   severityLevel: 'Minor' | 'Moderate' | 'Severe' | 'Critical';
@@ -25,7 +25,7 @@ export interface IncidentReportInterface {
   workflowStatus: 'Draft' | 'Submitted' | 'InReview' | 'Closed';
 
   /* ---------- generic fields ---------- */
-  id?: string; // DB‑generated UUID
+  id?: number; // DB‑generated primary key (integer)
   preIncidentContext?: string;
   postIncidentContext?: string;
   nearMissDescription?: string;
@@ -114,9 +114,9 @@ export type IncidentReportInsert = Omit<
   | 'correctiveActions'
   | 'supervisorReviewedAt'
 > & {
-  groupHomeId: string;
-  residentId: string;
-  staffId: string;
+  groupHomeId: number;
+  residentId: number;
+  staffId: number;
   incidentDateTime: string;
   incidentType: 'Injury' | 'Fall' | 'Aggression' | 'Medication' | 'Property' | 'NearMiss' | 'Other';
   severityLevel: 'Minor' | 'Moderate' | 'Severe' | 'Critical';
@@ -144,5 +144,5 @@ type SupervisorEditable = Pick<
  * • The row’s `id` must be supplied so the backend knows which report to update.
  */
 export type IncidentReportSupervisorUpdate = Partial<SupervisorEditable> & {
-  id: number; // ← DB primary key (integer)
+  id?: number; // ← DB primary key (integer)
 };
