@@ -35,10 +35,6 @@ export default function Page() {
   const [report, setReport] = useState<IncidentReportFetch | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState<boolean>(false);
 
-  // printable ref and handler
-  const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = usePrint(printRef, `Incident-${id}`);
-
   /**
    * Fetches the generated PDF and either opens it in a new tab
    * or forces a download.
@@ -72,10 +68,10 @@ export default function Page() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else {
-        // Just open a new tab / viewer
+        // Open a new tab / viewer
         window.open(url, '_blank');
-        // Do *not* revoke immediately or the tab will get an empty file.
-        // Revoke when the tab unloads, if you wish.
+        // Do *not* revoke immediately, or the tab will get an empty file.
+        // Revoke when the tab unloads if you wish.
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -118,7 +114,7 @@ export default function Page() {
   if (!report) return <p className="p-6 text-red-600">Report not found.</p>;
 
   return (
-    <div ref={printRef} className="max-w-4xl mx-auto space-y-8 p-6">
+    <div className="max-w-4xl mx-auto space-y-8 p-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Button
           onClick={() => router.back()}
@@ -136,9 +132,6 @@ export default function Page() {
         </h1>
         {/* Action buttons (functionality added later) */}
         <div className="flex gap-2 print:hidden">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-1" /> Print
-          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -151,7 +144,7 @@ export default function Page() {
               </>
             ) : (
               <>
-                <Share2 className="h-4 w-4 mr-1" /> Share
+                <Share2 className="h-4 w-4 mr-1" /> Get PDF
               </>
             )}
           </Button>
