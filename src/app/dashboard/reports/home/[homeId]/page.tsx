@@ -15,6 +15,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 function KpiTile({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -32,6 +33,7 @@ export default function Page() {
   const [currentHome, setCurrentHome] = useState<GroupHomeFetch | null>(null);
   const [residentMap, setResidentMap] = useState<Record<number, string>>({});
   const [overdueFollowUps, setOverdueFollowUps] = useState<number>(0);
+  const router = useRouter();
 
   useEffect(() => {
     const getAllReports = async (homeId: number) => {
@@ -319,7 +321,11 @@ export default function Page() {
             {/* Right column: actions */}
             <div className="flex gap-2 self-start sm:self-auto">
               {/* Review is always available */}
-              <Button size="sm" className={btnColor(r.workflowStatus)}>
+              <Button
+                size="sm"
+                className={btnColor(r.workflowStatus)}
+                onClick={() => router.push(`/dashboard/reports/review/${r.id}`)}
+              >
                 Review
               </Button>
 
