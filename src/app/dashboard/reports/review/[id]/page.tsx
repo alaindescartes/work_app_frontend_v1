@@ -7,10 +7,9 @@ import { IncidentReportFetch } from '@/interfaces/incidentReportInterface';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Printer, Share2 } from 'lucide-react';
+import { Printer, Share2, Loader2 } from 'lucide-react';
 import { useRef } from 'react';
 import usePrint from '@/lib/hooks/usePrint';
-import usePDF from '@/lib/hooks/usePDF';
 
 function PaperField({
   label,
@@ -34,14 +33,56 @@ export default function Page() {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [report, setReport] = useState<IncidentReportFetch | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState<boolean>(false);
 
   // printable ref and handler
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = usePrint(printRef, `Incident-${id}`);
-  const handleShare = async () => {
-    const pdfUrl = await usePDF(printRef, `Incident-${id}.pdf`);
-    if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+
+  /**
+   * Fetches the generated PDF and either opens it in a new tab
+   * or forces a download.
+   */
+  const getPdfUrl = async (id: number, download = false) => {
+    try {
+      setGeneratingPdf(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reports/get-pdf/${id}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server responded ${res.status}`);
+      }
+
+      // --> Convert the response to a Blob
+      const blob = await res.blob();
+
+      // --> Create a temporary object-URL
+      const url = URL.createObjectURL(blob);
+
+      if (download) {
+        // Force a download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `incident-${id}.pdf`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Just open a new tab / viewer
+        window.open(url, '_blank');
+        // Do *not* revoke immediately or the tab will get an empty file.
+        // Revoke when the tab unloads, if you wish.
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('Error fetching PDF:', msg);
+      // TODO: toast or monitoring
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -98,8 +139,21 @@ export default function Page() {
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-1" /> Print
           </Button>
-          <Button variant="outline" size="sm" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-1" /> Share
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={generatingPdf}
+            onClick={() => getPdfUrl(Number(id), false)}
+          >
+            {generatingPdf ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Generating…
+              </>
+            ) : (
+              <>
+                <Share2 className="h-4 w-4 mr-1" /> Share
+              </>
+            )}
           </Button>
         </div>
       </header>
