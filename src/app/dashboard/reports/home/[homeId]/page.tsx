@@ -316,6 +316,20 @@ export default function Page() {
     }
   };
 
+  // Stronger contrast badge colour for workflow status
+  const badgeColor = (status: string) => {
+    switch (status) {
+      case 'Closed':
+        return 'bg-red-600 text-white';
+      case 'InReview':
+        return 'bg-green-600 text-white';
+      case 'Submitted':
+        return 'bg-blue-600 text-white';
+      default: // Draft or other
+        return 'bg-gray-600 text-white';
+    }
+  };
+
   if (isLoading) return <p className="p-6">Loading …</p>;
 
   return (
@@ -466,9 +480,7 @@ export default function Page() {
                 <span className="ml-2 text-sm text-gray-600">
                   — {residentMap[r.residentId] ?? 'Unknown Resident'}
                 </span>
-                <Badge variant="outline" className="ml-2">
-                  {r.workflowStatus}
-                </Badge>
+                <Badge className={`ml-2 ${badgeColor(r.workflowStatus)}`}>{r.workflowStatus}</Badge>
               </h3>
 
               <p className="text-sm text-gray-500">
@@ -526,11 +538,6 @@ export default function Page() {
                   )}
                 </>
               )}
-
-              {/* Print is always available */}
-              <Button size="sm" className={btnColor(r.workflowStatus)}>
-                Print
-              </Button>
             </div>
           </div>
         ))}
