@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, Share2 } from 'lucide-react';
 import { useRef } from 'react';
 import usePrint from '@/lib/hooks/usePrint';
+import usePDF from '@/lib/hooks/usePDF';
 
 function PaperField({
   label,
@@ -37,6 +38,12 @@ export default function Page() {
   // printable ref and handler
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = usePrint(printRef, `Incident-${id}`);
+  const handleShare = async () => {
+    const pdfUrl = await usePDF(printRef, `Incident-${id}.pdf`);
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
+    }
+  };
 
   useEffect(() => {
     const getReports = async (IdField: number) => {
@@ -91,7 +98,7 @@ export default function Page() {
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-1" /> Print
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-1" /> Share
           </Button>
         </div>
