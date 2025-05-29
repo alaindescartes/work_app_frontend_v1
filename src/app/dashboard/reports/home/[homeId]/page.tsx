@@ -1,6 +1,6 @@
 'use client';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { IncidentReportFetch } from '@/interfaces/incidentReportInterface';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { Button } from '@/components/ui/button';
@@ -27,38 +27,152 @@ function KpiTile({ label, value, color }: { label: string; value: number; color:
 }
 
 export default function Page() {
+  /** Number of reports appended on each “Show more” click. Change once here. */
+  const PAGE_SIZE = 10;
   const { homeId } = useParams();
   const [reports, setReports] = useState<IncidentReportFetch[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [currentHome, setCurrentHome] = useState<GroupHomeFetch | null>(null);
   const [residentMap, setResidentMap] = useState<Record<number, string>>({});
   const [overdueFollowUps, setOverdueFollowUps] = useState<number>(0);
+  /**
+   * ───────────────────────────────────────────
+   *  Client‑side filter state
+   *  You can later plumb these into query‑string
+   *  params and fetch filtered data from the API.
+   * ───────────────────────────────────────────
+   */
+  const initialFilters = {
+    from: '',
+    to: '',
+    type: '',
+    severity: '',
+    status: new Set<string>(),
+    search: '',
+  };
+  const [filters, setFilters] = useState<typeof initialFilters>(initialFilters);
+  /** How many items are currently rendered */
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+  /** Normalise strings for fuzzy match */
+  const normal = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // strip accents
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  /** Levenshtein distance for 2 short strings; O(a*b) but fine for names */
+  const levenshtein = (a: string, b: string) => {
+    const al = a.length,
+      bl = b.length;
+    if (!al) return bl;
+    if (!bl) return al;
+    const dp = Array.from({ length: al + 1 }, (_, i) => i);
+    for (let j = 1; j <= bl; j++) {
+      let prev = dp[0]++;
+      for (let i = 1; i <= al; i++) {
+        const temp = dp[i];
+        dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+        prev = temp;
+      }
+    }
+    return dp[al];
+  };
+
+  /**
+   * Fuzzy name matching:
+   * - accent‑insensitive
+   * - ignores case & extra spaces
+   * - substrings match directly
+   * - otherwise allows Levenshtein distance ≤1 per token
+   *   e.g. "Joel Philips" matches "joe philips"
+   */
+  /** Does resident name match the search term loosely? */
+  const fuzzyMatch = (nameRaw: string, queryRaw: string) => {
+    const name = normal(nameRaw);
+    const query = normal(queryRaw);
+    if (name.includes(query)) return true;
+
+    const nameParts = name.split(' ');
+    const queryParts = query.split(' ');
+
+    // every query token must be close to at least one name token
+    return queryParts.every((qp) =>
+      nameParts.some((np) => {
+        if (np.startsWith(qp)) return true;
+        return levenshtein(np, qp) <= 1; // allow 1‑char difference
+      })
+    );
+  };
+
+  /** Helper to update a single filter key */
+  const updateFilter = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    // whenever any filter changes, reset pagination
+    setVisibleCount(PAGE_SIZE);
+  };
   const router = useRouter();
 
+  /**
+   * ───────────────────────────────────────────
+   *  Visibility‑aware polling for reports
+   *  • Changes POLL_MS or swaps out this effect
+   *    if you migrate to SSE/WebSocket later.
+   * ───────────────────────────────────────────
+   */
+  const POLL_MS = 30_000; // 30 s; adjust or externalise
+
   useEffect(() => {
-    const getAllReports = async (homeId: number) => {
+    if (!homeId) return;
+
+    const fetchReports = async () => {
       try {
-        // setLoading(true); // Removed stray setLoading(true)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[poll] fetching reports …');
+        }
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reports/get-reports/${homeId}`,
-          {
-            method: 'GET',
-            credentials: 'include',
-          }
+          { credentials: 'include' }
         );
         if (res.ok) {
           const data = await res.json();
           setReports(data.reports);
         }
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
-          console.error('Error fetching clients...', message);
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[poll] error:', err);
         }
-        // TODO: send error to monitoring service in production
       }
     };
-    getAllReports(Number(homeId));
+
+    let intervalId: NodeJS.Timeout | undefined;
+
+    const startPolling = () => {
+      fetchReports(); // immediate
+      intervalId = setInterval(fetchReports, POLL_MS);
+    };
+    const stopPolling = () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+
+    // decide initial state
+    if (document.visibilityState === 'visible') startPolling();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    // cleanup
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [homeId]);
 
   //--------------fetch group home--------------
@@ -148,6 +262,32 @@ export default function Page() {
   const inReviewCount = reports.filter((r) => r.workflowStatus === 'InReview').length;
   const closedCount = reports.filter((r) => r.workflowStatus === 'Closed').length;
 
+  /**
+   * Memoised filtered array. When you move filtering
+   * logic server‑side, replace this with the API response.
+   */
+  const filteredReports = useMemo(() => {
+    return reports.filter((r) => {
+      // Date range
+      if (filters.from && new Date(r.incidentDateTime) < new Date(filters.from)) return false;
+      if (filters.to && new Date(r.incidentDateTime) > new Date(filters.to + 'T23:59:59'))
+        return false;
+
+      // Incident type / severity
+      if (filters.type && r.incidentType !== filters.type) return false;
+      if (filters.severity && r.severityLevel !== filters.severity) return false;
+
+      // Status chips
+      if (filters.status.size && !filters.status.has(r.workflowStatus)) return false;
+
+      // Fuzzy text search on resident name
+      if (filters.search && !fuzzyMatch(residentMap[r.residentId] ?? '', filters.search))
+        return false;
+
+      return true;
+    });
+  }, [reports, filters, residentMap]);
+
   // choose a subtle background based on workflow status
   const statusBg = (status: string) => {
     switch (status) {
@@ -214,15 +354,23 @@ export default function Page() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <Label>Date Range (from)</Label>
-            <Input type="date" />
+            <Input
+              type="date"
+              value={filters.from}
+              onChange={(e) => updateFilter('from', e.target.value)}
+            />
           </div>
           <div>
             <Label>Date Range (to)</Label>
-            <Input type="date" />
+            <Input
+              type="date"
+              value={filters.to}
+              onChange={(e) => updateFilter('to', e.target.value)}
+            />
           </div>
           <div>
             <Label>Incident Type</Label>
-            <Select>
+            <Select onValueChange={(v) => updateFilter('type', v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
@@ -245,7 +393,7 @@ export default function Page() {
           </div>
           <div>
             <Label>Severity</Label>
-            <Select>
+            <Select onValueChange={(v) => updateFilter('severity', v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
@@ -258,17 +406,53 @@ export default function Page() {
               </SelectContent>
             </Select>
           </div>
-          {/* status chips placeholders */}
+
+          {/* Workflow status chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {['Draft', 'Submitted', 'InReview', 'Closed'].map((st) => {
+              const active = filters.status.has(st);
+              return (
+                <Badge
+                  key={st}
+                  variant={active ? 'default' : 'outline'}
+                  className="cursor-pointer select-none"
+                  onClick={() =>
+                    setFilters((prev) => {
+                      const next = new Set(prev.status);
+                      if (active) {
+                        next.delete(st);
+                      } else {
+                        next.add(st);
+                      }
+                      return { ...prev, status: next };
+                    })
+                  }
+                >
+                  {st}
+                </Badge>
+              );
+            })}
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-2">
-          <Input placeholder="Search by ID or text" />
-          <Button variant="outline">Search</Button>
+          <Input
+            placeholder="Search by Resident Name"
+            value={filters.search}
+            onChange={(e) => updateFilter('search', e.target.value)}
+          />
+          {/*<Button variant="outline" disabled>*/}
+          {/*  Search /!* Placeholder: filters run instantly client‑side *!/*/}
+          {/*</Button>*/}
+          {/* Reset filters to initial state */}
+          <Button variant="secondary" onClick={() => setFilters(initialFilters)}>
+            Reset Filters
+          </Button>
         </div>
       </section>
 
       {/* ────────── Report list (card view) ────────── */}
       <section className="space-y-4">
-        {reports.map((r) => (
+        {filteredReports.slice(0, visibleCount).map((r) => (
           <div
             key={r.id}
             className={`${statusBg(r.workflowStatus)} border rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4`}
@@ -351,10 +535,19 @@ export default function Page() {
           </div>
         ))}
 
-        {reports.length === 0 && (
-          <p className="text-center text-gray-500">No reports found for this home.</p>
+        {filteredReports.length === 0 && (
+          <p className="text-center text-gray-500">No reports match your filters.</p>
         )}
       </section>
+
+      {/* Pagination – show more */}
+      {visibleCount < filteredReports.length && (
+        <div className="flex justify-center mt-4">
+          <Button variant="outline" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+            Show more
+          </Button>
+        </div>
+      )}
 
       {/* ────────── Audit footer ────────── */}
       <footer className="text-xs text-gray-500 text-right">
