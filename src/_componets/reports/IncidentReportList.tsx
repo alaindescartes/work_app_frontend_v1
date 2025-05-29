@@ -3,7 +3,6 @@ import IncidentReportSubList from './IncidentReportSubList';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { ResidentFetch } from '@/interfaces/clientInterface';
 import { IncidentReportFetch } from '@/interfaces/incidentReportInterface';
-import { useRouter } from 'next/navigation';
 
 export default function IncidentReportList() {
   const [groupHomes, setGroupHomes] = useState<GroupHomeFetch[]>([]);
@@ -11,7 +10,6 @@ export default function IncidentReportList() {
   const [clients, setClients] = useState<ResidentFetch[]>([]);
   const [reports, setReports] = useState<IncidentReportFetch[]>([]);
   const [selectedHomeId, setSelectedHomeId] = useState<number | null>(null);
-  const router = useRouter();
 
   // Skeleton loader for homes
   const HomeSkeleton = () => <div className="h-14 bg-gray-200 rounded-md animate-pulse" />;

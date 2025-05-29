@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Printer, Share2 } from 'lucide-react';
+import { useRef } from 'react';
+import usePrint from '@/lib/hooks/usePrint';
 
 function PaperField({
   label,
@@ -31,6 +33,10 @@ export default function Page() {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [report, setReport] = useState<IncidentReportFetch | null>(null);
+
+  // printable ref and handler
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = usePrint(printRef, `Incident-${id}`);
 
   useEffect(() => {
     const getReports = async (IdField: number) => {
@@ -64,13 +70,13 @@ export default function Page() {
   if (!report) return <p className="p-6 text-red-600">Report not found.</p>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 p-6">
+    <div ref={printRef} className="max-w-4xl mx-auto space-y-8 p-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Button
           onClick={() => router.back()}
           variant="outline"
           size="icon"
-          className="self-start sm:self-auto"
+          className="self-start sm:self-auto print:hidden"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -81,8 +87,8 @@ export default function Page() {
           </Badge>
         </h1>
         {/* Action buttons (functionality added later) */}
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+        <div className="flex gap-2 print:hidden">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-1" /> Print
           </Button>
           <Button variant="outline" size="sm">
