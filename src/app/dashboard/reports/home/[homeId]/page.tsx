@@ -16,6 +16,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { IncidentFollowUpFetch } from '@/interfaces/followUp';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import FollowUpForm from '@/_componets/reports/FollowUpForm';
 
 function KpiTile({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -34,7 +37,15 @@ export default function Page() {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [currentHome, setCurrentHome] = useState<GroupHomeFetch | null>(null);
   const [residentMap, setResidentMap] = useState<Record<number, string>>({});
-  const [overdueFollowUps, setOverdueFollowUps] = useState<number>(0);
+  const [followUps, setFollowUps] = useState<IncidentFollowUpFetch[]>([]);
+
+  /** Number of follow‑ups whose dueDate has passed and are not closed */
+  const overdueFollowUps = useMemo(() => {
+    const today = new Date();
+    return followUps.filter(
+      (f) => f.status !== 'Closed' && f.dueDate != null && new Date(f.dueDate) < today
+    ).length;
+  }, [followUps]);
   /**
    * ───────────────────────────────────────────
    *  Client‑side filter state
@@ -241,22 +252,30 @@ export default function Page() {
     getResidents(Number(homeId));
     getHome();
 
-    // ---------- fetch overdue follow‑ups KPI ----------
-    const fetchOverdue = async () => {
+    //fetch all followups by group home
+    const fetchFollowUps = async (homeId: number) => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/follow-ups/overdue-count?homeId=${homeId}`,
-          { credentials: 'include' }
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reports/getAll-follow-up/${homeId}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
         );
         if (res.ok) {
-          const { count } = await res.json();
-          setOverdueFollowUps(count);
+          const data = await res.json();
+          setFollowUps(data.followUps);
         }
-      } catch {
-        // leave as 0 if request fails
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+          console.error('Error fetching reports...', message);
+        }
+        // TODO: send error to monitoring service in production
       }
     };
-    fetchOverdue();
+
+    fetchFollowUps(Number(homeId));
   }, [homeId]);
 
   const inReviewCount = reports.filter((r) => r.workflowStatus === 'InReview').length;
@@ -531,10 +550,32 @@ export default function Page() {
                   <Button size="sm" className={btnColor(r.workflowStatus)}>
                     Close
                   </Button>
+                  {/* Follow‑up notes */}
                   {r.followUpRequired && (
-                    <Button size="sm" className={btnColor(r.workflowStatus)}>
-                      Add Follow‑up Notes
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className={btnColor(r.workflowStatus)}>
+                          Add&nbsp;Follow‑up&nbsp;Notes
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        {(() => {
+                          /* find existing FU once per render */
+                          const existingFU =
+                            r.initialFollowUpId != null
+                              ? followUps.find((f) => f.id === r.initialFollowUpId)
+                              : followUps.find((f) => f.incidentId === r.id);
+
+                          return existingFU ? (
+                            <FollowUpForm incidentId={Number(r.id)} initial={existingFU} />
+                          ) : (
+                            <p className="p-4 text-sm text-red-600">
+                              No follow‑up task has been created for this report yet.
+                            </p>
+                          );
+                        })()}
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </>
               )}
