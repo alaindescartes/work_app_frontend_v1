@@ -1,8 +1,10 @@
+'use client';
 import { useEffect, useState } from 'react';
 import IncidentReportSubList from './IncidentReportSubList';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { ResidentFetch } from '@/interfaces/clientInterface';
 import { IncidentReportFetch } from '@/interfaces/incidentReportInterface';
+import Link from 'next/link';
 
 export default function IncidentReportList() {
   const [groupHomes, setGroupHomes] = useState<GroupHomeFetch[]>([]);
@@ -142,7 +144,27 @@ export default function IncidentReportList() {
       )}
 
       {/* Residents & reports */}
-      {selectedHomeId && <IncidentReportSubList residents={clients} reports={reports} />}
+      {selectedHomeId && (
+        <>
+          <div>
+            <Link
+              href={`/dashboard/reports/home/${selectedHomeId}`}
+              className="
+      inline-flex items-center gap-1 rounded-md
+      bg-purple-600 px-3 py-1.5
+      text-sm font-medium text-white
+      shadow hover:bg-purple-700
+      focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+      transition-colors
+    "
+            >
+              Jump&nbsp;to&nbsp;to all incident&nbsp;→
+            </Link>
+          </div>
+
+          <IncidentReportSubList residents={clients} reports={reports} />
+        </>
+      )}
     </div>
   );
 }
