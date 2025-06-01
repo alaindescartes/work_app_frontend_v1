@@ -53,7 +53,6 @@ export default function FollowUpForm({ incidentId, initial, onCancel }: FollowUp
   if (!followUpId) {
     return <div className="p-4 text-sm text-red-600">Cannot edit follow‑up: record not found.</div>;
   }
-  console.log(initial);
   const valid = title.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,8 +85,12 @@ export default function FollowUpForm({ incidentId, initial, onCancel }: FollowUp
       console.log('Follow-up updated successfully');
       // close the dialog if parent provided a handler
       onCancel?.();
-    } catch (err) {
-      console.error('Error updating follow-up:', err);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
+        console.error('Error updating followup...', message);
+      }
+      // TODO: send error to monitoring service in production
     } finally {
       setSaving(false);
     }
@@ -108,7 +111,7 @@ export default function FollowUpForm({ incidentId, initial, onCancel }: FollowUp
           <Input
             className="w-full"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             placeholder="e.g. Schedule GP appointment"
             required
           />
@@ -120,7 +123,7 @@ export default function FollowUpForm({ incidentId, initial, onCancel }: FollowUp
           <Textarea
             className="w-full"
             value={details}
-            onChange={(e) => setDetails(e.target.value)}
+            onChange={e => setDetails(e.target.value)}
             placeholder="Additional context, instructions, etc."
             rows={4}
           />
@@ -136,7 +139,7 @@ export default function FollowUpForm({ incidentId, initial, onCancel }: FollowUp
             type="date"
             className="w-full"
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            onChange={e => setDueDate(e.target.value)}
           />
         </div>
 
@@ -145,7 +148,7 @@ export default function FollowUpForm({ incidentId, initial, onCancel }: FollowUp
           <label className="block text-sm font-medium mb-1">Status</label>
           <Select
             value={status}
-            onValueChange={(v) => setStatus(v as 'Open' | 'InProgress' | 'Closed')}
+            onValueChange={v => setStatus(v as 'Open' | 'InProgress' | 'Closed')}
           >
             <SelectTrigger>
               <SelectValue placeholder="Choose status" />
