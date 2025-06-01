@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { IncidentFollowUpFetch } from '@/interfaces/followUp';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import FollowUpForm from '@/_componets/reports/FollowUpForm';
+import { toast } from 'sonner';
 
 function KpiTile({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -43,7 +44,7 @@ export default function Page() {
   const overdueFollowUps = useMemo(() => {
     const today = new Date();
     return followUps.filter(
-      f => f.status !== 'Closed' && f.dueDate != null && new Date(f.dueDate) < today
+      (f) => f.status !== 'Closed' && f.dueDate != null && new Date(f.dueDate) < today
     ).length;
   }, [followUps]);
   /**
@@ -109,8 +110,8 @@ export default function Page() {
     const queryParts = query.split(' ');
 
     // every query token must be close to at least one name token
-    return queryParts.every(qp =>
-      nameParts.some(np => {
+    return queryParts.every((qp) =>
+      nameParts.some((np) => {
         if (np.startsWith(qp)) return true;
         return levenshtein(np, qp) <= 1; // allow 1‑char difference
       })
@@ -119,7 +120,7 @@ export default function Page() {
 
   /** Helper to update a single filter key */
   const updateFilter = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
     // whenever any filter changes, reset pagination
     setVisibleCount(PAGE_SIZE);
   };
@@ -237,7 +238,7 @@ export default function Page() {
           data.residentsData.forEach((r: { id: number; firstName: string; lastName: string }) => {
             map[r.id] = `${r.firstName} ${r.lastName}`;
           });
-          setResidentMap(prev => ({ ...prev, ...map }));
+          setResidentMap((prev) => ({ ...prev, ...map }));
         }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
@@ -278,15 +279,15 @@ export default function Page() {
     fetchFollowUps(Number(homeId));
   }, [homeId]);
 
-  const inReviewCount = reports.filter(r => r.workflowStatus === 'InReview').length;
-  const closedCount = reports.filter(r => r.workflowStatus === 'Closed').length;
+  const inReviewCount = reports.filter((r) => r.workflowStatus === 'InReview').length;
+  const closedCount = reports.filter((r) => r.workflowStatus === 'Closed').length;
 
   /**
    * Memoised filtered array. When you move filtering
    * logic server‑side, replace this with the API response.
    */
   const filteredReports = useMemo(() => {
-    return reports.filter(r => {
+    return reports.filter((r) => {
       // Date range
       if (filters.from && new Date(r.incidentDateTime) < new Date(filters.from)) return false;
       if (filters.to && new Date(r.incidentDateTime) > new Date(filters.to + 'T23:59:59'))
@@ -351,6 +352,66 @@ export default function Page() {
 
   if (isLoading) return <p className="p-6">Loading …</p>;
 
+  //changes status of the report (optimistic update)
+  const handleWorkFlowStatusChange = async (
+    id: number,
+    status: 'Draft' | 'Submitted' | 'InReview' | 'Closed'
+  ) => {
+    const reportToChange = reports.find((r) => r.id === id);
+    const isFollowUp = followUps.find((f) => f.id === reportToChange?.initialFollowUpId);
+    if (isFollowUp?.status !== 'Closed') {
+      toast(
+        'Records indicate uncompleted follow ups. Please complete the follow ups before changing the status',
+        { style: { backgroundColor: '#FBBF24', color: '#111827' } }
+      );
+      return;
+    }
+    // --- optimistic UI update ---
+    setReports((prev) => prev.map((r) => (r.id === id ? { ...r, workflowStatus: status } : r)));
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reports/edit-workFlow/${id}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`API responded ${res.status}`);
+      }
+
+      // If the backend returns the updated row, merge it (keeps updated_at etc.)
+      try {
+        const { report } = await res.json();
+        if (report) {
+          setReports((prev) => prev.map((r) => (r.id === report.id ? report : r)));
+        }
+      } catch {
+        /* ignore: response body not JSON / has no report */
+      }
+
+      toast('Report status updated', {
+        style: { backgroundColor: 'green', color: 'white' },
+      });
+    } catch (err) {
+      // Revert optimistic update on error
+      setReports((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, workflowStatus: r.workflowStatus } : r))
+      );
+
+      toast('Error changing status', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error changing status:', err);
+      }
+    }
+  };
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-6">
       {/* ────────── Header ────────── */}
@@ -390,7 +451,7 @@ export default function Page() {
             <Input
               type="date"
               value={filters.from}
-              onChange={e => updateFilter('from', e.target.value)}
+              onChange={(e) => updateFilter('from', e.target.value)}
             />
           </div>
           <div>
@@ -398,12 +459,12 @@ export default function Page() {
             <Input
               type="date"
               value={filters.to}
-              onChange={e => updateFilter('to', e.target.value)}
+              onChange={(e) => updateFilter('to', e.target.value)}
             />
           </div>
           <div>
             <Label>Incident Type</Label>
-            <Select onValueChange={v => updateFilter('type', v)}>
+            <Select onValueChange={(v) => updateFilter('type', v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
@@ -416,7 +477,7 @@ export default function Page() {
                   'Property',
                   'NearMiss',
                   'Other',
-                ].map(t => (
+                ].map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
                   </SelectItem>
@@ -426,12 +487,12 @@ export default function Page() {
           </div>
           <div>
             <Label>Severity</Label>
-            <Select onValueChange={v => updateFilter('severity', v)}>
+            <Select onValueChange={(v) => updateFilter('severity', v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent>
-                {['Minor', 'Moderate', 'Severe', 'Critical'].map(s => (
+                {['Minor', 'Moderate', 'Severe', 'Critical'].map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
                   </SelectItem>
@@ -442,7 +503,7 @@ export default function Page() {
 
           {/* Workflow status chips */}
           <div className="flex items-center gap-2 flex-wrap">
-            {['Draft', 'Submitted', 'InReview', 'Closed'].map(st => {
+            {['Draft', 'Submitted', 'InReview', 'Closed'].map((st) => {
               const active = filters.status.has(st);
               return (
                 <Badge
@@ -450,7 +511,7 @@ export default function Page() {
                   variant={active ? 'default' : 'outline'}
                   className="cursor-pointer select-none"
                   onClick={() =>
-                    setFilters(prev => {
+                    setFilters((prev) => {
                       const next = new Set(prev.status);
                       if (active) {
                         next.delete(st);
@@ -471,7 +532,7 @@ export default function Page() {
           <Input
             placeholder="Search by Resident Name"
             value={filters.search}
-            onChange={e => updateFilter('search', e.target.value)}
+            onChange={(e) => updateFilter('search', e.target.value)}
           />
           {/*<Button variant="outline" disabled>*/}
           {/*  Search /!* Placeholder: filters run instantly client‑side *!/*/}
@@ -485,7 +546,7 @@ export default function Page() {
 
       {/* ────────── Report list (card view) ────────── */}
       <section className="space-y-4">
-        {filteredReports.slice(0, visibleCount).map(r => (
+        {filteredReports.slice(0, visibleCount).map((r) => (
           <div
             key={r.id}
             className={`${statusBg(r.workflowStatus)} border rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4`}
@@ -516,7 +577,7 @@ export default function Page() {
                 Follow‑up Required:{' '}
                 {r.followUpRequired ? (
                   /* If a follow‑up row exists and is closed → “Completed”, else “Yes” */
-                  followUps.find(f => f.id === r.initialFollowUpId)?.status === 'Closed' ? (
+                  followUps.find((f) => f.id === r.initialFollowUpId)?.status === 'Closed' ? (
                     <Badge className="bg-purple-100 text-purple-700">Completed</Badge>
                   ) : (
                     <Badge className="bg-purple-100 text-purple-700">Yes</Badge>
@@ -547,12 +608,16 @@ export default function Page() {
               {/* Actions only for non‑closed reports */}
               {r.workflowStatus !== 'Closed' && (
                 <>
-                  <Button size="sm" className={btnColor(r.workflowStatus)}>
+                  <Button
+                    size="sm"
+                    className={btnColor(r.workflowStatus)}
+                    onClick={() => handleWorkFlowStatusChange(Number(r.id), 'Closed')}
+                  >
                     Close
                   </Button>
                   {/* Follow‑up notes */}
                   {r.followUpRequired &&
-                    followUps.find(f => f.id === r.initialFollowUpId)?.status !== 'Closed' && (
+                    followUps.find((f) => f.id === r.initialFollowUpId)?.status !== 'Closed' && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button size="sm" className={btnColor(r.workflowStatus)}>
@@ -565,8 +630,8 @@ export default function Page() {
                             /* find existing FU once per render */
                             const existingFU =
                               r.initialFollowUpId != null
-                                ? followUps.find(f => f.id === r.initialFollowUpId)
-                                : followUps.find(f => f.incidentId === r.id);
+                                ? followUps.find((f) => f.id === r.initialFollowUpId)
+                                : followUps.find((f) => f.incidentId === r.id);
 
                             return existingFU ? (
                               <FollowUpForm incidentId={Number(r.id)} initial={existingFU} />
@@ -593,7 +658,7 @@ export default function Page() {
       {/* Pagination – show more */}
       {visibleCount < filteredReports.length && (
         <div className="flex justify-center mt-4">
-          <Button variant="outline" onClick={() => setVisibleCount(c => c + PAGE_SIZE)}>
+          <Button variant="outline" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
             Show more
           </Button>
         </div>
