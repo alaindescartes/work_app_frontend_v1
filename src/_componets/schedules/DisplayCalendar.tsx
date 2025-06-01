@@ -28,8 +28,10 @@ interface DisplayCalendarProps {
 }
 
 export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCalendarProps) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
+  // ‑‑ current month being viewed (initialised from prop) ‑‑
+  const [viewDate, setViewDate] = useState<Date>(date);
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
   const staffId = useSelector((state: RootState) => state.user.userInfo.staffId);
 
   // Normalize schedules once and memoize so it doesn't change on every render
@@ -38,6 +40,14 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
     const obj = schedules as { schedules?: Schedule[] };
     return obj.schedules ?? [];
   }, [schedules]);
+  const curretHome = useSelector((state: RootState) => state.grouphome);
+  const residents = curretHome.residents;
+
+  // Resolve residentId → "First Last"
+  const getResidentName = (id: number) => {
+    const res = residents.find((r) => r.id === id);
+    return res ? `${res.firstName} ${res.lastName}` : 'Unknown resident';
+  };
 
   // writable copy so we can do optimistic updates without mutating frozen props
   const [localSchedules, setLocalSchedules] = useState<Schedule[]>(scheduleList);
@@ -51,7 +61,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   const eventDays = useMemo(() => {
     const set = new Set<number>();
     if (localSchedules.length) {
-      localSchedules.forEach(s => {
+      localSchedules.forEach((s) => {
         const startUtc =
           typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
         const start = toZonedTime(startUtc, 'America/Edmonton'); // force MDT
@@ -63,7 +73,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
     return set;
   }, [localSchedules, year, month]);
 
-  const monthName = date.toLocaleString('default', { month: 'long' });
+  const monthName = viewDate.toLocaleString('default', { month: 'long' });
 
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [open, setOpen] = useState(false);
@@ -94,8 +104,8 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
         patch: { status },
       }).unwrap();
       // optimistic local update
-      setLocalSchedules(prev =>
-        prev.map(sch => (sch.id === scheduleId ? { ...sch, status } : sch))
+      setLocalSchedules((prev) =>
+        prev.map((sch) => (sch.id === scheduleId ? { ...sch, status } : sch))
       );
       toast.success('', {
         id: toastId,
@@ -130,7 +140,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
     const mm = selectedDay.getMonth();
     const dd = selectedDay.getDate();
 
-    return localSchedules.filter(s => {
+    return localSchedules.filter((s) => {
       const startUtc =
         typeof s.start_time === 'string' ? parseISO(s.start_time) : new Date(s.start_time);
       const start = toZonedTime(startUtc, 'America/Edmonton');
@@ -141,13 +151,39 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
   return (
     <div className="w-full max-w-none p-4 bg-purple-50 rounded-lg shadow-md">
       {/* Month header */}
-      <h2 className="text-center text-2xl font-semibold text-purple-700 mb-4">
-        {monthName}&nbsp;{year}
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          className="rounded-full p-1 text-purple-700 hover:bg-purple-200/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          onClick={() => {
+            setViewDate(new Date(year, month - 1, 1));
+            setSelectedDay(null);
+          }}
+          aria-label="Previous month"
+        >
+          &lt;
+        </button>
+
+        <h2 className="text-center text-2xl font-semibold text-purple-700">
+          {monthName}&nbsp;{year}
+        </h2>
+
+        <button
+          type="button"
+          className="rounded-full p-1 text-purple-700 hover:bg-purple-200/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          onClick={() => {
+            setViewDate(new Date(year, month + 1, 1));
+            setSelectedDay(null);
+          }}
+          aria-label="Next month"
+        >
+          &gt;
+        </button>
+      </div>
 
       {/* Weekday labels */}
       <div className="grid grid-cols-7 w-full gap-2 text-center text-sm font-medium text-purple-700 mb-2">
-        {weekDays.map(d => (
+        {weekDays.map((d) => (
           <span key={d} className="flex justify-center">
             {d}
           </span>
@@ -160,7 +196,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
           <div key={`lead-${idx}`} className="aspect-square" />
         ))}
 
-        {daysInMonth.map(day => (
+        {daysInMonth.map((day) => (
           <Drawer
             key={day.toISOString()}
             open={open && selectedDay?.getTime() === day.getTime()}
@@ -190,7 +226,7 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
 
               {/* List of schedules */}
               <div className="space-y-3 px-4 pb-4 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-300/70 scrollbar-thumb-rounded">
-                {daySchedules.map(s => (
+                {daySchedules.map((s) => (
                   <div
                     key={s.id}
                     className={`relative border rounded-lg p-4 pr-5 shadow-sm transition-shadow 
@@ -210,7 +246,12 @@ export function DisplayCalendar({ date = new Date(), schedules = [] }: DisplayCa
                       }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold text-purple-700">{s.title}</span>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-purple-700">{s.title}</span>
+                        <span className="text-xs text-gray-500">
+                          {getResidentName(s.residentId)}
+                        </span>
+                      </div>
 
                       <div className="flex gap-2">
                         {/* type badge */}
