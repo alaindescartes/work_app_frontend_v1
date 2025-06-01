@@ -167,6 +167,24 @@ export default function IncidentReportForm({ role = 'staff' }: { role?: UserRole
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    /* ------------ basic front‑end validation ---------------- */
+    const missing: string[] = [];
+    if (!form.groupHomeId) missing.push('Group Home');
+    if (!form.residentId) missing.push('Resident');
+    if (!form.staffId) missing.push('Staff');
+    if (!form.incidentDateTime) missing.push('Incident Date / Time');
+    if (!form.incidentType) missing.push('Incident Type');
+    if (!form.severityLevel) missing.push('Severity Level');
+    if (!form.description.trim()) missing.push('Description');
+
+    if (missing.length) {
+      toast(
+        `Please complete the required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`,
+        { style: { backgroundColor: 'red', color: 'white' } }
+      );
+      return;
+    }
+
     const {
       /* Identifiers */
       groupHomeId,
