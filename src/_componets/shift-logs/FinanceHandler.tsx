@@ -57,6 +57,7 @@ export interface FinanceRow {
   lastCount?: number; // previous balance to show in “missing-count”
   status: FinanceStatus; // derived: ok | missing-count | mismatch
   message?: string;
+  countedAt?: string; // Edmonton‑local calendar date of this count
 }
 
 interface Props {
@@ -92,7 +93,12 @@ function CountCard({
       >
         <div className="flex flex-col">
           <span className="font-medium">{row.clientName}</span>
-          <span className="text-xs text-gray-500">Staff&nbsp;{row.staffInitials}</span>
+          <span className="text-xs text-gray-500">
+            Staff&nbsp;{row.staffInitials}
+            {row.status !== 'missing-count' && row.countedAt ? (
+              <> &nbsp;·&nbsp;{row.countedAt}</>
+            ) : null}
+          </span>
         </div>
 
         <span
@@ -248,6 +254,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     src.forEach((r) => {
       const nested = hasNestedCount(r) ? r.latest_count : null;
       const flat = hasNestedCount(r) ? null : r;
+      const raw = nested ? nested.counted_at : (flat?.counted_at ?? '');
 
       const balance = nested ? nested.balance_cents : (flat?.balance_cents ?? 0);
       const diffCents = nested ? nested.diff_cents : (flat?.diff_cents ?? null);
@@ -283,6 +290,15 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
         })} since last reconciliation`;
       }
 
+      const dateDisplay = raw
+        ? new Date(raw).toLocaleDateString('en-CA', {
+            timeZone: 'America/Edmonton',
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+          })
+        : undefined;
+
       const regularRow: FinanceRow = {
         id: r.resident_id,
         clientName: `${r.firstName}\u202F${r.lastName}`,
@@ -291,6 +307,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
         lastCount: balance,
         status: regularStatus,
         message: regularMessage,
+        countedAt: dateDisplay,
       };
 
       allRows.push(regularRow);
