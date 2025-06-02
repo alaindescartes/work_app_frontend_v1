@@ -1,10 +1,11 @@
 'use client';
-import FinanceHandler from '@/_componets/shift-logs/FinanceHandler';
+import FinanceHandler, { NewCountPayload } from '@/_componets/shift-logs/FinanceHandler';
 import ShiftLogHandler from '@/_componets/shift-logs/ShiftLogHandler';
 import { CashCountFetch } from '@/interfaces/cashTransactionInterface';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+import { toast } from 'sonner';
 
 interface ResidentCashCount {
   resident_id: number;
@@ -19,31 +20,57 @@ export default function DisplayShiftOverview() {
   const [counts, setCounts] = useState<ResidentCashCount[]>([]);
   const homeId = useSelector((state: RootState) => state.grouphome.grouphomeInfo.id);
 
-  //fetch cash counts for clients in a home
-  useEffect(() => {
-    const getCounts = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/get-cashCount-by-home/${homeId}?date=${new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' })}`,
-          {
-            method: 'GET',
-            credentials: 'include',
-          }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          const list: ResidentCashCount[] = Array.isArray(json) ? json : (json?.counts ?? []);
-          setCounts(list);
+  const fetchCounts = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/get-cashCount-by-home/${homeId}?date=${new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' })}`,
+        {
+          method: 'GET',
+          credentials: 'include',
         }
-      } catch (e: unknown) {
-        if (process.env.NODE_ENV === 'development') console.error(e);
+      );
+      if (res.ok) {
+        const json = await res.json();
+        const list: ResidentCashCount[] = Array.isArray(json) ? json : (json?.counts ?? []);
+        setCounts(list);
       }
-    };
-    getCounts();
+    } catch (e: unknown) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+    }
   }, [homeId]);
+
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
+
+  //add count done by staff
+  const handleAddCount = async (data: NewCountPayload) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/add-cashCount`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
+      if (response.ok) {
+        toast('counts added successfully.', {
+          style: { backgroundColor: 'green', color: 'white' },
+        });
+        await fetchCounts(); // refresh list with latest data
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+      toast("couldn't add count added successfully.", {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+    }
+  };
   return (
     <div>
-      <FinanceHandler resData={counts} />
+      <FinanceHandler resData={counts} onAddCount={handleAddCount} />
 
       {/* fancy separator */}
       <div className="my-8 h-px w-full bg-gradient-to-r from-purple-400 via-transparent to-purple-400" />

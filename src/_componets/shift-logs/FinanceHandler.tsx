@@ -1,8 +1,16 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { CashCountFetch } from '@/interfaces/cashTransactionInterface';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 /* --------------------------------------------------------------------- */
 /** Flattened form returned by the “month” SQL (no nested latest_count) */
@@ -23,6 +31,14 @@ function hasNestedCount(row: IncomingRow): row is ResidentCashCount {
 
 /* --------------------------------------------------------------------- */
 export type FinanceStatus = 'ok' | 'missing-count' | 'mismatch';
+
+/** Payload sent when staff records a new cash‑count */
+export interface NewCountPayload {
+  resident_id: number;
+  balance_cents: number;
+  staff_id: number;
+  counted_at: string; // ISO string (UTC) – always “now” in Edmonton local time
+}
 
 interface ResidentCashCount {
   resident_id: number;
@@ -45,24 +61,28 @@ export interface FinanceRow {
 
 interface Props {
   resData?: IncomingRow[];
-  onAddCount?: (clientId: number) => void; // called when staff clicks “Add my count”
+  onAddCount?: (data: NewCountPayload) => void;
 }
 
 function CountCard({
   row,
   onAddCount,
+  staffId,
   fmtCurrency,
   statusColor,
   cardClass,
   messageBg,
 }: {
   row: FinanceRow;
-  onAddCount?: (id: number) => void;
+  onAddCount?: (data: NewCountPayload) => void;
+  staffId: number;
   fmtCurrency: (c: number) => string;
   statusColor: (s: FinanceStatus | undefined) => string;
   cardClass: (s: FinanceStatus | undefined) => string;
   messageBg: (s: FinanceStatus | undefined) => string;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div>
       <div
@@ -104,13 +124,103 @@ function CountCard({
             Last&nbsp;count:&nbsp;
             {row.lastCount !== undefined ? fmtCurrency(row.lastCount) : '—'}
           </span>
-          <button
-            type="button"
-            onClick={() => onAddCount?.(row.id)}
-            className="rounded bg-purple-600 px-2 py-0.5 text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            Add&nbsp;my&nbsp;count
-          </button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild={true}>
+              <button
+                type="button"
+                className="rounded bg-purple-600 px-2 py-0.5 text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                Add&nbsp;my&nbsp;count
+              </button>
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Record Cash Count</DialogTitle>
+                <DialogDescription>
+                  Enter the amount of cash on hand (in dollars). The time will be saved as now.
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* --- form --- */}
+              <form
+                className="mt-4 flex flex-col gap-3"
+                onSubmit={e => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  const dollars = (form.elements.namedItem('amount') as HTMLInputElement).value;
+                  const cents = Math.round(Number(dollars) * 100);
+
+                  if (!Number.isFinite(cents) || cents < 0) {
+                    alert('Please enter a valid non‑negative number.');
+                    return;
+                  }
+
+                  if (onAddCount) {
+                    // build ISO string in America/Edmonton *without* UTC shift
+                    const parts = new Intl.DateTimeFormat('en-CA', {
+                      timeZone: 'America/Edmonton',
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false,
+                    }).formatToParts(new Date());
+
+                    const get = (type: string) => parts.find(p => p.type === type)!.value;
+                    const yyyy = get('year');
+                    const mm = get('month');
+                    const dd = get('day');
+                    const hh = get('hour');
+                    const mi = get('minute');
+                    const ss = get('second');
+
+                    // work out current Edmonton offset
+                    const edmNow = new Date().toLocaleString('en-US', {
+                      timeZone: 'America/Edmonton',
+                    });
+                    const offsetMinutes = -new Date(edmNow).getTimezoneOffset();
+                    const sign = offsetMinutes >= 0 ? '+' : '-';
+                    const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+                    const offset = `${sign}${pad(Math.trunc(offsetMinutes / 60))}:${pad(offsetMinutes % 60)}`;
+
+                    const countedAtISO = `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}${offset}`;
+
+                    const payload: NewCountPayload = {
+                      resident_id: row.id,
+                      balance_cents: cents,
+                      staff_id: staffId,
+                      counted_at: countedAtISO,
+                    };
+                    onAddCount(payload);
+                    setOpen(false); // close dialog
+                  }
+                }}
+              >
+                <label className="flex flex-col text-sm">
+                  <span className="mb-1">Cash on hand (CAD $)</span>
+                  <input
+                    required
+                    name="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="rounded border px-2 py-1"
+                    placeholder="0.00"
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  className="self-end rounded bg-purple-600 px-4 py-1 text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  Save
+                </button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
@@ -149,7 +259,11 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
       const flat = hasNestedCount(r) ? null : r;
 
       const countedBy = nested ? nested.staff_id : (flat?.staff_id ?? 0);
-      const countedAt = (nested ? nested.counted_at : (flat?.counted_at ?? '')).slice(0, 10);
+
+      const raw = nested ? nested.counted_at : (flat?.counted_at ?? '');
+      const countedAt = raw
+        ? new Date(raw).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' })
+        : '';
 
       if (countedBy === currentUser && countedAt === todayStr) {
         myCountToday.add(r.resident_id);
@@ -269,6 +383,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
           key={`${r.id}-${r.status}`}
           row={r}
           onAddCount={onAddCount}
+          staffId={currentUser}
           fmtCurrency={fmtCurrency}
           statusColor={statusColor}
           cardClass={cardClass}
