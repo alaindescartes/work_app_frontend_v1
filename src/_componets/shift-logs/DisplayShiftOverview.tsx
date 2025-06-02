@@ -19,6 +19,7 @@ interface ResidentCashCount {
 export default function DisplayShiftOverview() {
   const [counts, setCounts] = useState<ResidentCashCount[]>([]);
   const homeId = useSelector((state: RootState) => state.grouphome.grouphomeInfo.id);
+  const DISPLAYED_NUMBER_COUNT = 5;
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -70,7 +71,11 @@ export default function DisplayShiftOverview() {
   };
   return (
     <div>
-      <FinanceHandler resData={counts} onAddCount={handleAddCount} />
+      <FinanceHandler
+        resData={counts}
+        onAddCount={handleAddCount}
+        maxRegularRows={DISPLAYED_NUMBER_COUNT}
+      />
 
       {/* fancy separator */}
       <div className="my-8 h-px w-full bg-gradient-to-r from-purple-400 via-transparent to-purple-400" />

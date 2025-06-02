@@ -63,6 +63,7 @@ export interface FinanceRow {
 interface Props {
   resData?: IncomingRow[];
   onAddCount?: (data: NewCountPayload) => void;
+  maxRegularRows?: number; // how many non‑missing rows to show (default = Infinity)
 }
 
 function CountCard({
@@ -215,7 +216,11 @@ function CountCard({
   );
 }
 
-export default function FinanceHandler({ resData: incoming, onAddCount }: Props) {
+export default function FinanceHandler({
+  resData: incoming,
+  onAddCount,
+  maxRegularRows = Infinity,
+}: Props) {
   /* --- convert incoming API data into FinanceRow[] ------------------- */
 
   const currentUser = useSelector((state: RootState) => state.user.userInfo.staffId);
@@ -361,6 +366,11 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     }
   };
 
+  /* ---- apply display limit (missing-count rows always kept) --------- */
+  const missingRows = rows.filter((r) => r.status === 'missing-count');
+  const regularRows = rows.filter((r) => r.status !== 'missing-count').slice(0, maxRegularRows);
+  const displayRows = [...missingRows, ...regularRows];
+
   return rows.length === 0 ? (
     <section className="w-full px-4">
       <h1 className="text-2xl font-bold text-purple-700 mb-2">Client Cash on Hand</h1>
@@ -370,7 +380,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     <section className="w-full space-y-3 px-4">
       <h1 className="text-2xl font-bold text-purple-700 mb-2">Client Cash on Hand</h1>
 
-      {rows.map((r, idx) => (
+      {displayRows.map((r, idx) => (
         <CountCard
           key={`${r.id}-${idx}`}
           row={r}
