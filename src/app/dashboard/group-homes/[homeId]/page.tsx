@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskList from '@/_componets/tasks/TaskList';
 import { ScheduleWrapper } from '@/_componets/schedules/ScheduleWrapper';
 import IncidentReportForm from '@/_componets/forms/IncidentReportForm';
+import DisplayShiftOverview from '@/_componets/shift-logs/DisplayShiftOverview';
 
 type TabKey = 'clients' | 'other' | 'client-schedule' | 'logs' | 'reports';
 
@@ -116,7 +117,7 @@ export default function Page() {
         return;
       }
       const data = await response.json();
-      const filteredClients = clients.filter((client) => client.id !== data.resident.id);
+      const filteredClients = clients.filter(client => client.id !== data.resident.id);
       setClients(filteredClients);
 
       //update client redux
@@ -162,7 +163,7 @@ export default function Page() {
       <Tabs
         value={activeTab}
         className="w-full"
-        onValueChange={(value) => {
+        onValueChange={value => {
           if (isUnsavedChanges && value !== activeTab) {
             toast('You have unsaved changes. Save or discard them before switching tabs.', {
               style: { backgroundColor: 'orange', color: 'white' },
@@ -224,7 +225,9 @@ export default function Page() {
           </div>
         </TabsContent>
         <TabsContent value="logs" className="mt-4 z-0">
-          <div className="w-full">staff shift logs</div>
+          <div className="w-full">
+            <DisplayShiftOverview />
+          </div>
         </TabsContent>
         <TabsContent value="reports" className="mt-4 z-0">
           <div className="w-full">
