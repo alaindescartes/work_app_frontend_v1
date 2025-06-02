@@ -296,7 +296,11 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
       allRows.push(regularRow);
     });
 
-    return allRows;
+    // put “Add my count” cards first
+    return [
+      ...allRows.filter((r) => r.status === 'missing-count'),
+      ...allRows.filter((r) => r.status !== 'missing-count'),
+    ];
   }, [incoming, currentUser]);
 
   /* --- helpers --------------------------------------------------------- */
@@ -349,9 +353,9 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     <section className="w-full space-y-3 px-4">
       <h1 className="text-2xl font-bold text-purple-700 mb-2">Client Cash on Hand</h1>
 
-      {rows.map((r) => (
+      {rows.map((r, idx) => (
         <CountCard
-          key={`${r.id}-${r.status}`}
+          key={`${r.id}-${idx}`}
           row={r}
           onAddCount={onAddCount}
           staffId={currentUser}
