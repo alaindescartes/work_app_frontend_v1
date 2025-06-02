@@ -38,6 +38,7 @@ export default function DisplayShiftOverview() {
       if (process.env.NODE_ENV === 'development') console.error(e);
     }
   }, [homeId]);
+  console.log(counts);
 
   useEffect(() => {
     fetchCounts();

@@ -117,7 +117,6 @@ function CountCard({
           </span>
         )}
       </div>
-
       {row.status === 'missing-count' && (
         <div className="flex items-center justify-between border-t pt-1 px-1 text-xs">
           <span className="text-gray-500">
@@ -145,7 +144,7 @@ function CountCard({
               {/* --- form --- */}
               <form
                 className="mt-4 flex flex-col gap-3"
-                onSubmit={e => {
+                onSubmit={(e) => {
                   e.preventDefault();
                   const form = e.currentTarget;
                   const dollars = (form.elements.namedItem('amount') as HTMLInputElement).value;
@@ -156,44 +155,15 @@ function CountCard({
                     return;
                   }
 
+                  const countedAtISO = new Date().toISOString(); // UTC timestamp; DB uses TIMESTAMPTZ
+
+                  const payload: NewCountPayload = {
+                    resident_id: row.id,
+                    balance_cents: cents,
+                    staff_id: staffId,
+                    counted_at: countedAtISO,
+                  };
                   if (onAddCount) {
-                    // build ISO string in America/Edmonton *without* UTC shift
-                    const parts = new Intl.DateTimeFormat('en-CA', {
-                      timeZone: 'America/Edmonton',
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: false,
-                    }).formatToParts(new Date());
-
-                    const get = (type: string) => parts.find(p => p.type === type)!.value;
-                    const yyyy = get('year');
-                    const mm = get('month');
-                    const dd = get('day');
-                    const hh = get('hour');
-                    const mi = get('minute');
-                    const ss = get('second');
-
-                    // work out current Edmonton offset
-                    const edmNow = new Date().toLocaleString('en-US', {
-                      timeZone: 'America/Edmonton',
-                    });
-                    const offsetMinutes = -new Date(edmNow).getTimezoneOffset();
-                    const sign = offsetMinutes >= 0 ? '+' : '-';
-                    const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
-                    const offset = `${sign}${pad(Math.trunc(offsetMinutes / 60))}:${pad(offsetMinutes % 60)}`;
-
-                    const countedAtISO = `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}${offset}`;
-
-                    const payload: NewCountPayload = {
-                      resident_id: row.id,
-                      balance_cents: cents,
-                      staff_id: staffId,
-                      counted_at: countedAtISO,
-                    };
                     onAddCount(payload);
                     setOpen(false); // close dialog
                   }
@@ -223,7 +193,7 @@ function CountCard({
           </Dialog>
         </div>
       )}
-
+      `
       {row.message && (
         <div
           className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium shadow-inner ${messageBg(
@@ -241,6 +211,7 @@ function CountCard({
 
 export default function FinanceHandler({ resData: incoming, onAddCount }: Props) {
   /* --- convert incoming API data into FinanceRow[] ------------------- */
+
   const currentUser = useSelector((state: RootState) => state.user.userInfo.staffId);
   const user = useSelector((state: RootState) => state.user.userInfo);
   const currentStaffFirstName = user.firstName;
@@ -254,7 +225,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }); // YYYY-MM-DD
     const myCountToday = new Set<number>();
 
-    src.forEach(r => {
+    src.forEach((r) => {
       const nested = hasNestedCount(r) ? r.latest_count : null;
       const flat = hasNestedCount(r) ? null : r;
 
@@ -274,7 +245,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     const addedMissing = new Set<number>();
     const allRows: FinanceRow[] = [];
 
-    src.forEach(r => {
+    src.forEach((r) => {
       const nested = hasNestedCount(r) ? r.latest_count : null;
       const flat = hasNestedCount(r) ? null : r;
 
@@ -378,7 +349,7 @@ export default function FinanceHandler({ resData: incoming, onAddCount }: Props)
     <section className="w-full space-y-3 px-4">
       <h1 className="text-2xl font-bold text-purple-700 mb-2">Client Cash on Hand</h1>
 
-      {rows.map(r => (
+      {rows.map((r) => (
         <CountCard
           key={`${r.id}-${r.status}`}
           row={r}
