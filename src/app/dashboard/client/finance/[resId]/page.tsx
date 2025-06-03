@@ -1,7 +1,10 @@
 'use client';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { toast } from 'sonner';
 
 /* ---------- Types for finance summary ---------- */
 export interface Transaction {
@@ -49,6 +52,14 @@ export interface ResidentFinanceSummary {
   transactions: Transaction[];
 }
 
+export interface CashTransactionInsert {
+  resident_id: number;
+  amount_cents: number;
+  reason?: string | null;
+  entered_by: number;
+  allowance_id?: number | null;
+}
+
 /* ---------- helpers ---------- */
 const fmtCurrency = (cents: number) =>
   (cents / 100).toLocaleString('en-CA', {
@@ -69,9 +80,13 @@ const fmtDate = (iso: string) =>
 
 export default function Page() {
   const { resId } = useParams();
+  const currentStaffId = useSelector((state: RootState) => state.user.userInfo.staffId);
   const router = useRouter();
   const [summary, setSummary] = useState<ResidentFinanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTxnModal, setShowTxnModal] = useState(false);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const reasonRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const getSummary = async () => {
@@ -99,6 +114,29 @@ export default function Page() {
     };
     getSummary();
   }, [resId]);
+
+  const handleAddTransaction = async (data: CashTransactionInsert) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/cash-transaction`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
+      if (res.ok) {
+        toast('Transaction added successfully', {
+          style: { backgroundColor: 'green', color: 'white' },
+        });
+        return;
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+      toast('Could not add transaction', { style: { backgroundColor: 'red', color: 'white' } });
+    }
+  };
   return (
     <section className="mx-auto max-w-5xl px-6 py-8 space-y-8 min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -114,6 +152,7 @@ export default function Page() {
         <div className="flex gap-3">
           <button
             type="button"
+            onClick={() => setShowTxnModal(true)}
             className="inline-flex items-center gap-1 rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
           >
             + Record&nbsp;Transaction
@@ -235,6 +274,76 @@ export default function Page() {
         </>
       ) : (
         <p className="text-red-600">Unable to load finance summary.</p>
+      )}
+
+      {/* Transaction Modal */}
+      {showTxnModal && summary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg space-y-4">
+            <h2 className="text-lg font-semibold">Record Transaction</h2>
+
+            <form
+              className="space-y-3"
+              onSubmit={e => {
+                e.preventDefault();
+                const dollars = parseFloat(amountRef.current?.value || '0');
+                if (isNaN(dollars) || dollars === 0) {
+                  alert('Enter a non‑zero amount.');
+                  return;
+                }
+                const cents = Math.round(dollars * 100);
+                const payload: CashTransactionInsert = {
+                  resident_id: summary.resident.id,
+                  amount_cents: -Math.abs(cents), // store withdrawals as negative
+                  reason: reasonRef.current?.value || null,
+                  entered_by: currentStaffId,
+                  allowance_id: summary.openAllowance?.id ?? null,
+                };
+                handleAddTransaction(payload);
+                setShowTxnModal(false);
+              }}
+            >
+              <label className="flex flex-col text-sm">
+                <span className="mb-1 font-medium">Amount (CAD $)</span>
+                <input
+                  ref={amountRef}
+                  type="number"
+                  step="0.01"
+                  min="-1000000"
+                  className="rounded border px-3 py-2"
+                  placeholder="0.00"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col text-sm">
+                <span className="mb-1 font-medium">Reason (optional)</span>
+                <textarea
+                  ref={reasonRef}
+                  rows={3}
+                  className="rounded border px-3 py-2"
+                  placeholder="Describe purpose…"
+                />
+              </label>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTxnModal(false)}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </section>
   );
