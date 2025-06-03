@@ -164,10 +164,17 @@ export default function Page() {
     }
     console.log(data);
   };
+
+  const generatePdf = () => {
+    toast('PDF export coming soon!', {
+      style: { backgroundColor: 'slategray', color: 'white' },
+    });
+    console.log('Would generate PDF for summary:', summary);
+  };
   return (
     <section className="mx-auto max-w-5xl px-6 py-8 space-y-8 min-h-screen bg-gray-50">
       {/* Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <button
           type="button"
           onClick={() => router.back()}
@@ -176,11 +183,11 @@ export default function Page() {
           ← Back
         </button>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setShowTxnModal(true)}
-            className="inline-flex items-center gap-1 rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full sm:w-auto text-center inline-flex items-center gap-1 rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
           >
             + Record&nbsp;Transaction
           </button>
@@ -188,9 +195,17 @@ export default function Page() {
           <button
             type="button"
             onClick={() => setShowAllowanceModal(true)}
-            className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="w-full sm:w-auto text-center inline-flex items-center gap-1 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
             + Add&nbsp;Allowance
+          </button>
+
+          <button
+            type="button"
+            onClick={generatePdf}
+            className="w-full sm:w-auto text-center inline-flex items-center gap-1 rounded-md bg-slate-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          >
+            🖨️ Export&nbsp;PDF
           </button>
         </div>
       </div>
