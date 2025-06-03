@@ -151,7 +151,7 @@ function CountCard({
               {/* --- form --- */}
               <form
                 className="mt-4 flex flex-col gap-3"
-                onSubmit={(e) => {
+                onSubmit={e => {
                   e.preventDefault();
                   const form = e.currentTarget;
                   const dollars = (form.elements.namedItem('amount') as HTMLInputElement).value;
@@ -236,7 +236,7 @@ export default function FinanceHandler({
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }); // YYYY-MM-DD
     const myCountToday = new Set<number>();
 
-    src.forEach((r) => {
+    src.forEach(r => {
       const nested = hasNestedCount(r) ? r.latest_count : null;
       const flat = hasNestedCount(r) ? null : r;
 
@@ -256,7 +256,7 @@ export default function FinanceHandler({
     const addedMissing = new Set<number>();
     const allRows: FinanceRow[] = [];
 
-    src.forEach((r) => {
+    src.forEach(r => {
       const nested = hasNestedCount(r) ? r.latest_count : null;
       const flat = hasNestedCount(r) ? null : r;
       const raw = nested ? nested.counted_at : (flat?.counted_at ?? '');
@@ -320,8 +320,8 @@ export default function FinanceHandler({
 
     // put “Add my count” cards first
     return [
-      ...allRows.filter((r) => r.status === 'missing-count'),
-      ...allRows.filter((r) => r.status !== 'missing-count'),
+      ...allRows.filter(r => r.status === 'missing-count'),
+      ...allRows.filter(r => r.status !== 'missing-count'),
     ];
   }, [incoming, currentUser]);
 
@@ -367,8 +367,8 @@ export default function FinanceHandler({
   };
 
   /* ---- apply display limit (missing-count rows always kept) --------- */
-  const missingRows = rows.filter((r) => r.status === 'missing-count');
-  const regularRows = rows.filter((r) => r.status !== 'missing-count').slice(0, maxRegularRows);
+  const missingRows = rows.filter(r => r.status === 'missing-count');
+  const regularRows = rows.filter(r => r.status !== 'missing-count').slice(0, maxRegularRows);
   const displayRows = [...missingRows, ...regularRows];
 
   return rows.length === 0 ? (
@@ -382,7 +382,7 @@ export default function FinanceHandler({
 
       {displayRows.map((r, idx) => (
         <CountCard
-          key={`${r.id}-${idx}`}
+          key={`${r.id}-${r.status}-${r.countedAt ?? idx}`}
           row={r}
           onAddCount={onAddCount}
           staffId={currentUser}
