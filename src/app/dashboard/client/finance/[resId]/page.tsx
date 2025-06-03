@@ -165,11 +165,41 @@ export default function Page() {
     console.log(data);
   };
 
-  const generatePdf = () => {
-    toast('PDF export coming soon!', {
-      style: { backgroundColor: 'slategray', color: 'white' },
-    });
-    console.log('Would generate PDF for summary:', summary);
+  const generatePdf = async (resident_id: number) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/transaction-pdf/${resident_id}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+        }
+      );
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        // Open in a new browser tab/window
+        window.open(url, '_blank', 'noopener,noreferrer');
+
+        toast('PDF opened in new tab', {
+          style: { backgroundColor: 'green', color: 'white' },
+        });
+
+        // Optional: revoke after some delay to give the browser time
+        setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
+      } else {
+        toast('Could not generate PDF', {
+          style: { backgroundColor: 'red', color: 'white' },
+        });
+        console.error(await res.text());
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+      toast('Could not generate PDF', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+    }
   };
   return (
     <section className="mx-auto max-w-5xl px-6 py-8 space-y-8 min-h-screen bg-gray-50">
@@ -202,7 +232,7 @@ export default function Page() {
 
           <button
             type="button"
-            onClick={generatePdf}
+            onClick={() => summary && generatePdf(summary.resident.id)}
             className="w-full sm:w-auto text-center inline-flex items-center gap-1 rounded-md bg-slate-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
           >
             🖨️ Export&nbsp;PDF
@@ -288,7 +318,7 @@ export default function Page() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {summary.transactions.map(tx => (
+                    {summary.transactions.map((tx) => (
                       <tr key={tx.id} className="hover:bg-purple-50">
                         <td className="px-4 py-2 whitespace-nowrap">{fmtDate(tx.created_at)}</td>
                         <td className="px-4 py-2">{tx.reason}</td>
@@ -327,7 +357,7 @@ export default function Page() {
 
             <form
               className="space-y-3"
-              onSubmit={e => {
+              onSubmit={(e) => {
                 e.preventDefault();
                 const dollars = parseFloat(amountRef.current?.value || '0');
                 if (isNaN(dollars) || dollars === 0) {
@@ -397,7 +427,7 @@ export default function Page() {
 
             <form
               className="space-y-3"
-              onSubmit={e => {
+              onSubmit={(e) => {
                 e.preventDefault();
                 const dollars = parseFloat(allowanceAmountRef.current?.value || '0');
                 if (isNaN(dollars) || dollars <= 0) {
