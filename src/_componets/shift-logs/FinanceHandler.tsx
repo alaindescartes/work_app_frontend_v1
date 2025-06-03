@@ -112,7 +112,7 @@ function CountCard({
         </span>
         {row.status !== 'missing-count' && (
           <Link
-            href={`/clients/${row.id}/finance`}
+            href={`/dashboard/client/finance/${row.id}`}
             className="ml-2 text-xs text-purple-600 underline hover:text-purple-800"
           >
             Details&nbsp;&raquo;
