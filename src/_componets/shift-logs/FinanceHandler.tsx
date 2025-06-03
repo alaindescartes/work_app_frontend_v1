@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { CashCountFetch } from '@/interfaces/cashTransactionInterface';
 import { useSelector } from 'react-redux';
@@ -109,7 +110,14 @@ function CountCard({
         >
           {fmtCurrency(row.balance)}
         </span>
-
+        {row.status !== 'missing-count' && (
+          <Link
+            href={`/clients/${row.id}/finance`}
+            className="ml-2 text-xs text-purple-600 underline hover:text-purple-800"
+          >
+            Details&nbsp;&raquo;
+          </Link>
+        )}
         {row.status && (
           <span
             className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor(
