@@ -1,10 +1,11 @@
 'use client';
 import { useParams } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { toast } from 'sonner';
+import { CashAllowanceInsert } from '@/interfaces/cashTransactionInterface';
 
 /* ---------- Types for finance summary ---------- */
 export interface Transaction {
@@ -85,35 +86,35 @@ export default function Page() {
   const [summary, setSummary] = useState<ResidentFinanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTxnModal, setShowTxnModal] = useState(false);
+  const [showAllowanceModal, setShowAllowanceModal] = useState(false);
   const amountRef = useRef<HTMLInputElement>(null);
   const reasonRef = useRef<HTMLTextAreaElement>(null);
+  const allowanceAmountRef = useRef<HTMLInputElement>(null);
+  const periodStartRef = useRef<HTMLInputElement>(null);
+
+  const fetchSummary = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/client-financial-summary/${resId}`,
+        { method: 'GET', credentials: 'include' }
+      );
+      if (res.ok) {
+        const data: ResidentFinanceSummary = await res.json();
+        setSummary(data);
+      } else {
+        console.error(await res.text());
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [resId]);
 
   useEffect(() => {
-    const getSummary = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/client-financial-summary/${resId}`,
-          {
-            method: 'GET',
-            credentials: 'include',
-          }
-        );
-
-        if (res.ok) {
-          const data: ResidentFinanceSummary = await res.json();
-          setSummary(data);
-          setLoading(false);
-        } else {
-          console.error(await res.text());
-          setLoading(false);
-        }
-      } catch (e) {
-        if (process.env.NODE_ENV === 'development') console.error(e);
-        setLoading(false);
-      }
-    };
-    getSummary();
-  }, [resId]);
+    fetchSummary();
+  }, [fetchSummary]);
 
   const handleAddTransaction = async (data: CashTransactionInsert) => {
     try {
@@ -130,12 +131,38 @@ export default function Page() {
         toast('Transaction added successfully', {
           style: { backgroundColor: 'green', color: 'white' },
         });
+        await fetchSummary();
         return;
       }
     } catch (e) {
       if (process.env.NODE_ENV === 'development') console.error(e);
       toast('Could not add transaction', { style: { backgroundColor: 'red', color: 'white' } });
     }
+  };
+
+  const handleAddAllowance = async (data: CashAllowanceInsert) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/finance/add-allowance/${currentStaffId}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
+      if (res.ok) {
+        toast('Allowance added successfully', {
+          style: { backgroundColor: 'green', color: 'white' },
+        });
+        await fetchSummary();
+        return;
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+      toast('Could not add Allowance', { style: { backgroundColor: 'red', color: 'white' } });
+    }
+    console.log(data);
   };
   return (
     <section className="mx-auto max-w-5xl px-6 py-8 space-y-8 min-h-screen bg-gray-50">
@@ -160,6 +187,7 @@ export default function Page() {
 
           <button
             type="button"
+            onClick={() => setShowAllowanceModal(true)}
             className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
             + Add&nbsp;Allowance
@@ -337,6 +365,81 @@ export default function Page() {
                 <button
                   type="submit"
                   className="rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Allowance Modal */}
+      {showAllowanceModal && summary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg space-y-4">
+            <h2 className="text-lg font-semibold">Add Allowance</h2>
+
+            <form
+              className="space-y-3"
+              onSubmit={e => {
+                e.preventDefault();
+                const dollars = parseFloat(allowanceAmountRef.current?.value || '0');
+                if (isNaN(dollars) || dollars <= 0) {
+                  alert('Enter a positive amount.');
+                  return;
+                }
+                const cents = Math.round(dollars * 100);
+                const start = periodStartRef.current?.value;
+                if (!start) {
+                  alert('Pick a period start date');
+                  return;
+                }
+
+                const allowance: CashAllowanceInsert = {
+                  resident_id: summary.resident.id,
+                  period_start: start,
+                  amount_cents: cents,
+                };
+                handleAddAllowance(allowance);
+                setShowAllowanceModal(false);
+              }}
+            >
+              <label className="flex flex-col text-sm">
+                <span className="mb-1 font-medium">Amount (CAD $)</span>
+                <input
+                  ref={allowanceAmountRef}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="rounded border px-3 py-2"
+                  placeholder="0.00"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col text-sm">
+                <span className="mb-1 font-medium">Period Start</span>
+                <input
+                  ref={periodStartRef}
+                  type="date"
+                  className="rounded border px-3 py-2"
+                  required
+                  defaultValue={new Date().toISOString().slice(0, 10)}
+                />
+              </label>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAllowanceModal(false)}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
                 >
                   Save
                 </button>
