@@ -1,3 +1,4 @@
+const ROW_HEIGHT = 140; // px, must match List itemSize
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
@@ -61,6 +62,16 @@ export default function ShiftLogHandler() {
   const [allLogs, setAllLogs] = useState<ShiftLogApi[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
+  /* ------------ computed logs (must come before list height calc) -------- */
+  const filtered = useMemo(() => {
+    if (filter === 'today') {
+      // server already defaults to today, but guard in case
+      return allLogs.filter(log => isToday(new Date(log.shift_start)));
+    }
+    // for custom range the server already provided the filtered list
+    return allLogs;
+  }, [allLogs, filter]);
+
   const [editingLog, setEditingLog] = useState<ShiftLogApi | null>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const criticalRef = useRef<HTMLInputElement>(null);
@@ -109,26 +120,22 @@ export default function ShiftLogHandler() {
   }, [currentHomeId, filter, startDate, endDate]);
 
   // --- responsive list height -------------------------------------------
-  const [listHeight, setListHeight] = useState<number>(50);
-  useEffect(() => {
-    const update = () => {
-      const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-      /* leave ~220px for header + paddings */
-      setListHeight(Math.max(240, vh - 220));
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
+  const [listHeight, setListHeight] = useState<number>(ROW_HEIGHT * 2);
 
-  const filtered = useMemo(() => {
-    if (filter === 'today') {
-      // server already defaults to today, but guard in case
-      return allLogs.filter(log => isToday(new Date(log.shift_start)));
-    }
-    // for custom range the server already provided the filtered list
-    return allLogs;
-  }, [allLogs, filter]);
+  const computeHeight = () => {
+    const maxVh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const maxAvail = Math.max(240, maxVh - 220); // leave header space
+    const needed = filtered.length * ROW_HEIGHT || ROW_HEIGHT;
+    return Math.min(maxAvail, needed);
+  };
+
+  useEffect(() => {
+    setListHeight(computeHeight());
+    const resize = () => setListHeight(computeHeight());
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered.length]);
 
   /* virtualised row renderer */
   const Row = ({ index, style }: ListChildComponentProps) => {
@@ -418,15 +425,10 @@ export default function ShiftLogHandler() {
       {loading && <p className="text-sm text-gray-500 mb-2">Loading shift logs…</p>}
       {/* Virtualised list */}
       <div className="flex-1 border rounded-md overflow-hidden">
-        <List height={listHeight} itemCount={filtered.length} itemSize={140} width="100%">
+        <List height={listHeight} itemCount={filtered.length} itemSize={ROW_HEIGHT} width="100%">
           {Row}
         </List>
       </div>
-
-      {/* Placeholder load‑more button */}
-      <button className="mt-3 self-center text-sm text-purple-600 hover:underline">
-        Load older logs…
-      </button>
     </section>
   );
 }
