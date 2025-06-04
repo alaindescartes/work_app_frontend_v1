@@ -6,7 +6,6 @@ import { format, isToday } from 'date-fns';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { toast } from 'sonner';
-import { json } from 'node:stream/consumers';
 
 /** Raw row returned from the API */
 interface ShiftLogApi {
@@ -37,33 +36,44 @@ export default function ShiftLogHandler() {
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const criticalRef = useRef<HTMLInputElement>(null);
 
-  /* fetch logs on mount / home change */
-  useEffect(() => {
+  // fetchLogs hoisted for reuse
+  const fetchLogs = async () => {
     if (!currentHomeId) return;
-    const fetchLogs = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift-logs/logs/${currentHomeId}`,
-          { credentials: 'include' }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          setAllLogs(json.data ?? []);
-        } else {
-          console.error(await res.text());
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift-logs/logs/${currentHomeId}`;
+      if (filter === 'custom' && startDate && endDate) {
+        url += `?from=${startDate}&to=${endDate}`;
       }
-    };
-    fetchLogs();
-  }, [currentHomeId]);
+      const res = await fetch(url, { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        setAllLogs(json.data ?? []);
+      } else {
+        console.error(await res.text());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* fetch logs when:
+       • today filter is active, OR
+       • custom filter has both from/to dates filled.
+     Dependency array stays constant length to avoid React warning. */
+  useEffect(() => {
+    const shouldFetch = filter === 'today' || (filter === 'custom' && startDate && endDate);
+
+    if (shouldFetch) {
+      fetchLogs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentHomeId, filter, startDate, endDate]);
 
   // --- responsive list height -------------------------------------------
-  const [listHeight, setListHeight] = useState<number>(400);
+  const [listHeight, setListHeight] = useState<number>(50);
   useEffect(() => {
     const update = () => {
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
@@ -76,18 +86,13 @@ export default function ShiftLogHandler() {
   }, []);
 
   const filtered = useMemo(() => {
-    return allLogs.filter(log => {
-      const dt = new Date(log.shift_start);
-      if (filter === 'today') return isToday(dt);
-      if (filter === 'custom' && startDate && endDate) {
-        const from = new Date(startDate);
-        const to = new Date(endDate);
-        to.setHours(23, 59, 59, 999);
-        return dt >= from && dt <= to;
-      }
-      return false;
-    });
-  }, [allLogs, filter, startDate, endDate]);
+    if (filter === 'today') {
+      // server already defaults to today, but guard in case
+      return allLogs.filter(log => isToday(new Date(log.shift_start)));
+    }
+    // for custom range the server already provided the filtered list
+    return allLogs;
+  }, [allLogs, filter]);
 
   /* virtualised row renderer */
   const Row = ({ index, style }: ListChildComponentProps) => {
@@ -162,7 +167,8 @@ export default function ShiftLogHandler() {
           style: { backgroundColor: '#fbbf24', color: '#1f2937' }, // amber bg, gray‑900 text
         });
       }
-    } catch (e) {
+    } catch (e: unknown) {
+      if (process.env.NODE_ENV !== 'production') console.error(e);
       toast('could not edit log', { style: { backgroundColor: 'red', color: 'white' } });
     }
   };
@@ -262,10 +268,7 @@ export default function ShiftLogHandler() {
           />
           <button
             type="button"
-            onClick={() => {
-              /* trigger memo recompute by just setting state noop */
-              setStartDate(startDate);
-            }}
+            onClick={fetchLogs}
             className="rounded-md bg-purple-600 text-white px-3 py-1.5 text-sm"
           >
             Apply
