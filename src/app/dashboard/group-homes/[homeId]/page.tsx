@@ -20,6 +20,7 @@ import TaskList from '@/_componets/tasks/TaskList';
 import { ScheduleWrapper } from '@/_componets/schedules/ScheduleWrapper';
 import IncidentReportForm from '@/_componets/forms/IncidentReportForm';
 import DisplayShiftOverview from '@/_componets/shift-logs/DisplayShiftOverview';
+import MealsWrapper from '@/_componets/meals/MealsWrapper';
 
 type TabKey = 'clients' | 'other' | 'client-schedule' | 'logs' | 'reports';
 
@@ -196,13 +197,19 @@ export default function Page() {
             value="logs"
             className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
-            Shift Logs
+            Logs and Finance
           </TabsTrigger>
           <TabsTrigger
             value="reports"
             className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
           >
             Reports
+          </TabsTrigger>
+          <TabsTrigger
+            value="meals"
+            className="whitespace-nowrap text-sm sm:text-base flex-1 sm:flex-none px-6 py-2 rounded-md border border-gray-300 bg-white data-[state=active]:!bg-purple-700 data-[state=active]:!text-white data-[state=active]:border-purple-700 text-gray-700 hover:bg-purple-200 transition-all"
+          >
+            Meal Tracker
           </TabsTrigger>
         </TabsList>
         <TabsContent value="clients" className="mt-4 z-0">
@@ -232,6 +239,11 @@ export default function Page() {
         <TabsContent value="reports" className="mt-4 z-0">
           <div className="w-full">
             <IncidentReportForm />
+          </div>
+        </TabsContent>
+        <TabsContent value="meals" className="mt-4 z-0">
+          <div className="w-full">
+            <MealsWrapper />
           </div>
         </TabsContent>
       </Tabs>
