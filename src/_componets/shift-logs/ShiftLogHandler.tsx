@@ -144,14 +144,14 @@ export default function ShiftLogHandler() {
       <div
         style={style}
         className={clsx(
-          'my-4 rounded-md border border-gray-200 px-4 py-4 flex flex-col bg-white hover:bg-gray-50 shadow-md relative',
+          'my-4 rounded-md border border-gray-200 px-3 py-3 flex flex-col gap-1 bg-white hover:bg-gray-50 shadow-md relative',
           log.is_critical && 'border-l-4 border-red-600'
         )}
       >
         <span className="text-xs text-gray-500">{dateStr}</span>
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between">
           <span className="font-medium">{staff}</span>
-          <span className="text-sm text-gray-600">{timeStr}</span>
+          <span className="text-xs sm:text-sm text-gray-600 sm:ml-2">{timeStr}</span>
         </div>
         <p className="text-sm text-gray-700 whitespace-pre-line">{log.note}</p>
 
@@ -348,7 +348,7 @@ export default function ShiftLogHandler() {
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
           + Add&nbsp;Log
         </button>
@@ -366,7 +366,7 @@ export default function ShiftLogHandler() {
               }
             }}
             className={clsx(
-              'rounded-md px-3 py-1.5 text-sm font-medium',
+              'w-full sm:w-auto text-center rounded-md px-3 py-1.5 text-sm font-medium',
               filter === key
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -384,7 +384,7 @@ export default function ShiftLogHandler() {
             setStartDate('');
             setEndDate('');
           }}
-          className="ml-auto rounded-md px-3 py-1.5 text-sm font-medium bg-gray-200 text-gray-800 hover:bg-gray-300"
+          className="w-full sm:w-auto sm:ml-auto text-center rounded-md px-3 py-1.5 text-sm font-medium bg-gray-200 text-gray-800 hover:bg-gray-300"
         >
           Reset
         </button>
@@ -408,7 +408,7 @@ export default function ShiftLogHandler() {
           <button
             type="button"
             onClick={fetchLogs}
-            className="rounded-md bg-purple-600 text-white px-3 py-1.5 text-sm"
+            className="w-full sm:w-auto text-center rounded-md bg-purple-600 text-white px-3 py-1.5 text-sm"
           >
             Apply
           </button>
@@ -418,7 +418,7 @@ export default function ShiftLogHandler() {
       {loading && <p className="text-sm text-gray-500 mb-2">Loading shift logs…</p>}
       {/* Virtualised list */}
       <div className="flex-1 border rounded-md overflow-hidden">
-        <List height={listHeight} itemCount={filtered.length} itemSize={104} width="100%">
+        <List height={listHeight} itemCount={filtered.length} itemSize={140} width="100%">
           {Row}
         </List>
       </div>
