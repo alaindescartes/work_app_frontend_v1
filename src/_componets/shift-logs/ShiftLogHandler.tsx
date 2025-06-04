@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import clsx from 'clsx';
 import { format, isToday } from 'date-fns';
@@ -75,7 +76,7 @@ export default function ShiftLogHandler() {
   }, []);
 
   const filtered = useMemo(() => {
-    return allLogs.filter((log) => {
+    return allLogs.filter(log => {
       const dt = new Date(log.shift_start);
       if (filter === 'today') return isToday(dt);
       if (filter === 'custom' && startDate && endDate) {
@@ -148,7 +149,7 @@ export default function ShiftLogHandler() {
       if (res.ok) {
         // refresh list
         const json = await res.json();
-        setAllLogs((prev) => prev.map((l) => (l.id === json.data.id ? json.data : l)));
+        setAllLogs(prev => prev.map(l => (l.id === json.data.id ? json.data : l)));
         setEditingLog(null);
         toast('successfully edited', { style: { backgroundColor: 'green', color: 'white' } });
       } else {
@@ -168,46 +169,48 @@ export default function ShiftLogHandler() {
 
   return (
     <section className="h-full flex flex-col">
-      {editingLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur">
-          <div className="w-full h-full sm:h-auto sm:max-w-2xl rounded-none sm:rounded-lg bg-white p-6 sm:p-8 shadow-lg space-y-4 overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-2">Edit Log #{editingLog.id}</h2>
+      {editingLog &&
+        createPortal(
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="w-full h-full sm:h-auto sm:max-w-2xl rounded-none sm:rounded-lg bg-white p-6 sm:p-8 shadow-lg space-y-4 overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-2">Edit Log #{editingLog.id}</h2>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" defaultChecked={editingLog.is_critical} ref={criticalRef} />
-              Mark as critical
-            </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" defaultChecked={editingLog.is_critical} ref={criticalRef} />
+                Mark as critical
+              </label>
 
-            <textarea
-              ref={noteRef}
-              defaultValue={editingLog.note}
-              rows={5}
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
+              <textarea
+                ref={noteRef}
+                defaultValue={editingLog.note}
+                rows={5}
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
 
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditingLog(null)}
-                className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={updateLog}
-                className="rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
-              >
-                Save
-              </button>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingLog(null)}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={updateLog}
+                  className="rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
+                >
+                  Save
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
       <h1 className="text-2xl font-bold text-purple-700 mb-4">Shift&nbsp;Logs</h1>
       {/* Filter header */}
       <div className="mb-2 flex flex-wrap gap-2">
-        {(['today', 'custom'] as const).map((key) => (
+        {(['today', 'custom'] as const).map(key => (
           <button
             key={key}
             onClick={() => {
@@ -247,14 +250,14 @@ export default function ShiftLogHandler() {
           <input
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={e => setStartDate(e.target.value)}
             className="border rounded px-2 py-1 text-sm w-full sm:w-auto"
           />
           <span className="text-sm">to</span>
           <input
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={e => setEndDate(e.target.value)}
             className="border rounded px-2 py-1 text-sm w-full sm:w-auto"
           />
           <button
