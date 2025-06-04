@@ -22,7 +22,36 @@ interface ShiftLogApi {
   note: string;
 }
 
+interface ShiftLogInsert {
+  home_id: number;
+  staff_id: number;
+  resident_id?: number | null;
+  shift_start: string;
+  shift_end: string;
+  is_critical?: boolean;
+  note: string;
+}
+
 export default function ShiftLogHandler() {
+  /* helper: current datetime in America/Edmonton formatted as yyyy-MM-ddTHH:mm */
+  const getEdmontonNowLocal = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Edmonton',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+      .formatToParts(new Date())
+      .reduce<Record<string, string>>((acc, p) => {
+        if (p.type !== 'literal') acc[p.type] = p.value;
+        return acc;
+      }, {});
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  };
+
   const [filter, setFilter] = useState<'today' | 'custom'>('today');
   const [startDate, setStartDate] = useState<string>(''); // ISO yyyy‑mm‑dd
   const [endDate, setEndDate] = useState<string>('');
@@ -35,6 +64,13 @@ export default function ShiftLogHandler() {
   const [editingLog, setEditingLog] = useState<ShiftLogApi | null>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const criticalRef = useRef<HTMLInputElement>(null);
+
+  /* ------------- Add‑Log modal state ---------------- */
+  const [showAddModal, setShowAddModal] = useState(false);
+  const addNoteRef = useRef<HTMLTextAreaElement>(null);
+  const addCriticalRef = useRef<HTMLInputElement>(null);
+  const addStartRef = useRef<HTMLInputElement>(null);
+  const addEndRef = useRef<HTMLInputElement>(null);
 
   // fetchLogs hoisted for reuse
   const fetchLogs = async () => {
@@ -173,6 +209,41 @@ export default function ShiftLogHandler() {
     }
   };
 
+  /* -------------------- ADD LOG -------------------- */
+  const saveNewLog = async () => {
+    if (!currentHomeId || !currentStaffId) return;
+
+    const payload: ShiftLogInsert = {
+      home_id: currentHomeId,
+      staff_id: currentStaffId,
+      resident_id: null,
+      shift_start: addStartRef.current?.value ?? '',
+      shift_end: addEndRef.current?.value ?? '',
+      is_critical: addCriticalRef.current?.checked ?? false,
+      note: addNoteRef.current?.value.trim() ?? '',
+    };
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift-logs/add-logs`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast('Log added', { style: { backgroundColor: 'green', color: 'white' } });
+        setShowAddModal(false);
+        fetchLogs(); // refresh list
+      } else {
+        toast('Could not add log', { style: { backgroundColor: 'red', color: 'white' } });
+        console.error(await res.text());
+      }
+    } catch (e) {
+      console.error(e);
+      toast('Error adding log', { style: { backgroundColor: 'red', color: 'white' } });
+    }
+  };
+
   return (
     <section className="h-full flex flex-col">
       {editingLog &&
@@ -213,7 +284,75 @@ export default function ShiftLogHandler() {
           </div>,
           document.body
         )}
-      <h1 className="text-2xl font-bold text-purple-700 mb-4">Shift&nbsp;Logs</h1>
+      {showAddModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="w-full h-full sm:h-auto sm:max-w-2xl rounded-none sm:rounded-lg bg-white p-6 sm:p-8 shadow-lg space-y-4 overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4">Add New Shift Log</h2>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="flex flex-col text-sm w-full">
+                  <span className="mb-1 font-medium">Shift Start</span>
+                  <input
+                    ref={addStartRef}
+                    type="datetime-local"
+                    className="rounded border px-3 py-2"
+                    defaultValue={getEdmontonNowLocal()}
+                  />
+                </label>
+                <label className="flex flex-col text-sm w-full">
+                  <span className="mb-1 font-medium">Shift End</span>
+                  <input
+                    ref={addEndRef}
+                    type="datetime-local"
+                    className="rounded border px-3 py-2"
+                    defaultValue={getEdmontonNowLocal()}
+                  />
+                </label>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" ref={addCriticalRef} />
+                Mark as critical
+              </label>
+
+              <textarea
+                ref={addNoteRef}
+                rows={5}
+                placeholder="Enter hand‑over note…"
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveNewLog}
+                  className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="text-2xl font-bold text-purple-700">Shift&nbsp;Logs</h1>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        >
+          + Add&nbsp;Log
+        </button>
+      </div>
       {/* Filter header */}
       <div className="mb-2 flex flex-wrap gap-2">
         {(['today', 'custom'] as const).map(key => (
