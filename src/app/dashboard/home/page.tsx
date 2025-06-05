@@ -7,6 +7,7 @@ import CustomizeHome from '@/_componets/addons/CustomizeHome';
 import HomeScreen from '@/_componets/HomeScreen';
 import { getSavedHome } from '@/lib/saveHomeToLocalStorage';
 import { setGroupHomeClients, setGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
+import Loading from '@/_componets/addons/Loading';
 
 function Page() {
   const dispatch = useDispatch();
@@ -49,7 +50,7 @@ function Page() {
   const homeState = useSelector((s: RootState) => s.grouphome);
   const ready = homeState.grouphomeInfo.id !== 0 && homeState.residents.length !== 0;
 
-  if (hydrating) return null; // prevent initial overlay flash
+  if (hydrating) return <Loading />; // prevent initial overlay flash
 
   return ready ? (
     <HomeScreen />
