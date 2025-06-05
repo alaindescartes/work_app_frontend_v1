@@ -2,9 +2,13 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+import FinanceReminder from '@/_componets/addons/HomeScreen/FinanceReminder';
 
 function HomeScreen() {
   const staff = useSelector((state: RootState) => state.user.userInfo);
+  const currentHome = useSelector((state: RootState) => state.grouphome.grouphomeInfo);
+  const residents = useSelector((state: RootState) => state.grouphome.residents);
+
   return (
     <main className="p-8 space-y-10 text-gray-800 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       <header className="mb-6">
@@ -16,19 +20,19 @@ function HomeScreen() {
         </p>
       </header>
 
-      {/* Shift Info */}
+      {/* Shift Info at a glance*/}
       <section className="bg-white rounded-2xl shadow-md p-6 border-l-4 border-indigo-500">
-        <h3 className="text-2xl font-semibold text-indigo-800 mb-4">Today’s Shift</h3>
+        <h3 className="text-2xl font-semibold text-indigo-800 mb-4">
+          Today’s Shift at {currentHome.name}
+        </h3>
+        <span className="text-sm text-gray-500">before you start we recommend:</span>
         <div className="space-y-2 text-sm">
-          <p>
-            <span className="font-medium text-gray-700">Shift Time:</span> 8:00 AM – 4:00 PM
-          </p>
-          <p>
-            <span className="font-medium text-gray-700">Clock-In Status:</span> Clocked In
-          </p>
-          <p>
-            <span className="font-medium text-gray-700">Break Schedule:</span> 12:00 PM – 12:30 PM
-          </p>
+          {/*finance checklist*/}
+          <div>
+            {residents.map((r) => (
+              <FinanceReminder residentId={r.id} key={r.id} />
+            ))}
+          </div>
         </div>
       </section>
 

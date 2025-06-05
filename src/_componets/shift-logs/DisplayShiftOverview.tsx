@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { toast } from 'sonner';
 
-interface ResidentCashCount {
+export interface ResidentCashCount {
   resident_id: number;
   firstName: string;
   lastName: string;
@@ -60,6 +60,7 @@ export default function DisplayShiftOverview() {
         toast('counts added successfully.', {
           style: { backgroundColor: 'green', color: 'white' },
         });
+
         await fetchCounts(); // refresh list with latest data
       }
     } catch (e) {

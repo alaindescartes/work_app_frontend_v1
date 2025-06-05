@@ -1,6 +1,6 @@
 'use client';
 import ClientList from '@/_componets/clients/ClientList';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -38,7 +38,14 @@ export default function Page() {
     setIsUnsavedChanges(unsaved);
   };
 
-  const [activeTab, setActiveTab] = useState<TabKey>('clients');
+  const searchParams = useSearchParams();
+  const initialTabParam = searchParams.get('tab') as TabKey | null;
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    initialTabParam &&
+      ['clients', 'other', 'client-schedule', 'logs', 'reports', 'meals'].includes(initialTabParam)
+      ? initialTabParam
+      : 'clients'
+  );
 
   useEffect(() => {
     dispatch(resetGrouphomeInfo());
@@ -118,7 +125,7 @@ export default function Page() {
         return;
       }
       const data = await response.json();
-      const filteredClients = clients.filter(client => client.id !== data.resident.id);
+      const filteredClients = clients.filter((client) => client.id !== data.resident.id);
       setClients(filteredClients);
 
       //update client redux
@@ -164,7 +171,7 @@ export default function Page() {
       <Tabs
         value={activeTab}
         className="w-full"
-        onValueChange={value => {
+        onValueChange={(value) => {
           if (isUnsavedChanges && value !== activeTab) {
             toast('You have unsaved changes. Save or discard them before switching tabs.', {
               style: { backgroundColor: 'orange', color: 'white' },
