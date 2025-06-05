@@ -7,6 +7,7 @@ import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { Button } from '@/components/ui/button';
 import { ResidentFetch } from '@/interfaces/clientInterface';
 import { setGroupHomeClients, setGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
+import { saveCurrentHome } from '@/lib/saveHomeToLocalStorage';
 
 export default function CustomizeHome() {
   const currentStaff = useSelector((state: RootState) => state.user.userInfo);
@@ -69,6 +70,7 @@ export default function CustomizeHome() {
   useEffect(() => {
     if (selectedHome !== '') {
       getResidents(selectedHome);
+      saveCurrentHome(Number(selectedHome));
     }
   }, [selectedHome]);
 
@@ -77,7 +79,7 @@ export default function CustomizeHome() {
     /* ensure residents list is fresh before dispatching */
     await getResidents(Number(selectedHome));
 
-    const groupHome = homes.find((h) => h.id === selectedHome);
+    const groupHome = homes.find(h => h.id === selectedHome);
     if (!groupHome) return;
 
     dispatch(setGrouphomeInfo(groupHome));
@@ -95,14 +97,14 @@ export default function CustomizeHome() {
         )}
         <select
           value={selectedHome || ''}
-          onChange={(e) => setSelectedHome(Number(e.target.value))}
+          onChange={e => setSelectedHome(Number(e.target.value))}
           className="w-full rounded-md border border-purple-400 bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-inner
                      focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <option value="" disabled>
             Choose your group home…
           </option>
-          {homes.map((home) => (
+          {homes.map(home => (
             <option key={home.id} value={home.id}>
               {home.name}
             </option>

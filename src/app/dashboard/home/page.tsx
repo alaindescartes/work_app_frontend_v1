@@ -1,26 +1,55 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, store } from '@/redux/store';
 import Overlay from '@/_componets/addons/Overlay';
 import CustomizeHome from '@/_componets/addons/CustomizeHome';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
 import HomeScreen from '@/_componets/HomeScreen';
+import { getSavedHome } from '@/lib/saveHomeToLocalStorage';
+import { setGroupHomeClients, setGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
 
 function Page() {
-  const homeState = useSelector((state: RootState) => state.grouphome);
-  const ready =
-    homeState.grouphomeInfo.id !== 0 && // id is safer than name !== ''
-    homeState.residents.length !== 0; // boolean you set after fetch
-  return (
-    <>
-      {ready ? (
-        <HomeScreen />
-      ) : (
-        <Overlay brightness={0.8}>
-          <CustomizeHome />
-        </Overlay>
-      )}
-    </>
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const savedId = getSavedHome(); // null | number
+    if (!savedId) return; // nothing to hydrate
+
+    // if slice already has a home (e.g., user switched manually) skip
+    if (store.getState().grouphome.grouphomeInfo.id) return;
+
+    // fetch home info + residents, then dispatch
+    (async () => {
+      const [homeRes, resRes] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grouphome-route/get-grouphome/${savedId}`,
+          { credentials: 'include', method: 'GET' }
+        ), //find-residents
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/resident-route/find-residents/${savedId}`,
+          { credentials: 'include', method: 'GET' }
+        ),
+      ]);
+
+      if (homeRes.ok && resRes.ok) {
+        const home = await homeRes.json();
+        const residents = await resRes.json();
+        dispatch(setGrouphomeInfo(home.groupHome));
+        dispatch(setGroupHomeClients(residents.residentsData));
+      }
+    })();
+  }, [dispatch]);
+
+  /* ------------- normal ready gate ------------- */
+  const homeState = useSelector((s: RootState) => s.grouphome);
+  const ready = homeState.grouphomeInfo.id !== 0 && homeState.residents.length !== 0;
+
+  return ready ? (
+    <HomeScreen />
+  ) : (
+    <Overlay brightness={0.8}>
+      <CustomizeHome />
+    </Overlay>
   );
 }
 
