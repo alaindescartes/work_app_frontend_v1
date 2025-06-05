@@ -13,6 +13,7 @@ export interface ResidentCashCount {
   lastName: string;
   staffFirstName: string;
   staffLastName: string;
+  staff_id: number;
   latest_count: CashCountFetch | null;
 }
 
