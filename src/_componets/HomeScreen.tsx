@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import FinanceReminder from '@/_componets/addons/HomeScreen/FinanceReminder';
 import Link from 'next/link';
+import ScheduleHome from '@/_componets/addons/HomeScreen/ScheduleHome';
 
 function HomeScreen() {
   const staff = useSelector((state: RootState) => state.user.userInfo);
@@ -21,35 +22,52 @@ function HomeScreen() {
         </p>
       </header>
 
-      {/* Shift Info at a glance*/}
-      <section className="rounded-2xl border-l-4 border-indigo-500 bg-white/90 px-8 py-6 shadow-lg backdrop-blur-sm font-semibold">
-        <h3 className="mb-3 flex items-center gap-2 text-2xl font-bold text-indigo-800">
-          <span>Shift&nbsp;Snapshot — {currentHome.name}</span>
-        </h3>
+      {/* ────────────────── Shift Snapshot ────────────────── */}
+      <section className="rounded-3xl border border-indigo-200 bg-white/80 px-8 py-8 shadow-xl ring-1 ring-indigo-50 backdrop-blur-md">
+        {/* Header */}
+        <header className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-2xl font-extrabold text-indigo-800 flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+            Shift&nbsp;Snapshot&nbsp;&mdash;&nbsp;{currentHome.name}
+          </h3>
+          <p className="text-sm text-gray-600">Start strong&mdash;run through these essentials.</p>
+        </header>
 
-        <p className="mb-4 text-sm text-gray-600">
-          Before you dive in, make sure you’ve completed today’s quick checks:
-        </p>
-
-        <div className="space-y-3 text-sm">
-          {/* Finance checklist */}
+        {/* Finance checklist */}
+        <div className="mb-6">
+          <h4 className="mb-2 text-sm font-semibold text-indigo-700">Cash Counts</h4>
           <div className="space-y-2">
             {residents.map((r) => (
               <FinanceReminder residentId={r.id} key={r.id} />
             ))}
           </div>
+        </div>
 
-          {/* Shift‑log reminder */}
-          <div className="flex items-center gap-2">
-            <span className="text-gray-700">
-              Stay synced with your team — review today’s&nbsp;shift&nbsp;log:
-            </span>
-            <Link
-              href={`/dashboard/group-homes/${currentHome.id}?tab=logs`}
-              className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-indigo-700 transition"
-            >
-              Open&nbsp;Logs
-            </Link>
+        {/* Shift log CTA */}
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg bg-indigo-50/60 p-4">
+          <span className="text-sm text-gray-700">
+            Stay in sync&mdash;review your colleagues’ notes:
+          </span>
+          <Link
+            href={`/dashboard/group-homes/${currentHome.id}?tab=logs`}
+            className="inline-block rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-indigo-700"
+          >
+            Open&nbsp;Shift&nbsp;Logs
+          </Link>
+        </div>
+
+        {/* Upcoming schedules */}
+        <div>
+          <h4 className="mb-2 text-sm font-semibold text-indigo-700">Upcoming Client Schedules</h4>
+          <div className="space-y-2">
+            {residents.map((r) => (
+              <ScheduleHome
+                resident_id={r.id}
+                resident_fNma={r.firstName}
+                resident_lName={r.lastName}
+                key={r.id}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -57,9 +75,12 @@ function HomeScreen() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Group Home */}
         <Card title="My Group Home">
-          <Info label="Location" value="Sunrise Home" />
-          <Info label="Shift Lead" value="Susan Clarke" />
-          <Info label="Current Clients" value="4" />
+          <Info label="Location" value={currentHome.address} />
+          <Info label="Shift Lead" value={currentHome.managerName ? currentHome.managerName : ''} />
+          <Info
+            label="Current Clients"
+            value={residents.length ? residents.length.toString() : ''}
+          />
         </Card>
 
         {/* Pending Tasks */}
@@ -79,15 +100,6 @@ function HomeScreen() {
           </ul>
         </Card>
 
-        {/* Training Modules */}
-        <Card title="Training Modules" className="md:col-span-2">
-          <ul className="list-disc pl-5 text-sm space-y-1 text-gray-700">
-            <li>Medication Administration — Due: April 2</li>
-            <li>Positive Behavior Support — In Progress</li>
-            <li>Fire Safety — Completed</li>
-          </ul>
-        </Card>
-
         {/* Emergency Contacts */}
         <Card title="Emergency Contacts">
           <Info label="Program Manager" value="David Hunt" />
@@ -95,41 +107,13 @@ function HomeScreen() {
           <Info label="Email" value="david.hunt@example.com" />
         </Card>
 
-        {/* Support Tickets */}
-        <Card title="Support Tickets">
-          <p className="text-sm text-gray-700 mb-2">
-            You have <strong>1</strong> open ticket:
-          </p>
-          <ul className="list-disc pl-5 text-sm text-gray-700">
-            <li>Portal access issue – Submitted March 20</li>
-          </ul>
-          <button className="mt-4 text-indigo-600 text-sm font-medium hover:underline transition">
-            View All Tickets
-          </button>
-        </Card>
-
-        {/* Clients Overview */}
-        <Card title="Clients Overview">
-          <ul className="text-sm text-gray-700 space-y-2">
-            <li>
-              <strong>Donald:</strong> Allergic to peanuts
-            </li>
-            <li>
-              <strong>Elaine:</strong> Prefers quiet mornings
-            </li>
-            <li>
-              <strong>Marcel:</strong> Mobility support needed
-            </li>
-          </ul>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card title="Quick Actions" className="flex flex-col gap-3">
-          <ActionButton label="Submit Incident Report" />
-          <ActionButton label="Clock In / Out" />
-          <ActionButton label="View Schedule" />
-          <ActionButton label="Submit Timesheet" />
-        </Card>
+        {/*/!* Quick Actions *!/*/}
+        {/*<Card title="Quick Actions" className="flex flex-col gap-3">*/}
+        {/*  <ActionButton label="Submit Incident Report" />*/}
+        {/*  <ActionButton label="Clock In / Out" />*/}
+        {/*  <ActionButton label="View Schedule" />*/}
+        {/*  <ActionButton label="Submit Timesheet" />*/}
+        {/*</Card>*/}
       </div>
     </main>
   );
@@ -144,8 +128,19 @@ const Card = ({
   children: React.ReactNode;
   className?: string;
 }) => (
-  <div className={`bg-white rounded-2xl shadow-md p-6 border border-gray-200 ${className}`}>
-    <h3 className="text-xl font-semibold text-indigo-800 mb-4 border-b pb-2">{title}</h3>
+  <div
+    className={`
+      relative overflow-hidden rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-indigo-50
+      transition hover:shadow-xl
+      ${className}
+    `}
+  >
+    {/* Decorative gradient strip */}
+    <span className="pointer-events-none absolute inset-x-0 top-0 h-1 block bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+
+    <h3 className="mb-4 border-b border-indigo-100 pb-3 text-xl font-bold text-indigo-800">
+      {title}
+    </h3>
     {children}
   </div>
 );
