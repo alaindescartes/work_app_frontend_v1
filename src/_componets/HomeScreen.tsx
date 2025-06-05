@@ -3,6 +3,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import FinanceReminder from '@/_componets/addons/HomeScreen/FinanceReminder';
+import Link from 'next/link';
 
 function HomeScreen() {
   const staff = useSelector((state: RootState) => state.user.userInfo);
@@ -21,17 +22,34 @@ function HomeScreen() {
       </header>
 
       {/* Shift Info at a glance*/}
-      <section className="bg-white rounded-2xl shadow-md p-6 border-l-4 border-indigo-500">
-        <h3 className="text-2xl font-semibold text-indigo-800 mb-4">
-          Today’s Shift at {currentHome.name}
+      <section className="rounded-2xl border-l-4 border-indigo-500 bg-white/90 px-8 py-6 shadow-lg backdrop-blur-sm font-semibold">
+        <h3 className="mb-3 flex items-center gap-2 text-2xl font-bold text-indigo-800">
+          <span>Shift&nbsp;Snapshot — {currentHome.name}</span>
         </h3>
-        <span className="text-sm text-gray-500">before you start we recommend:</span>
-        <div className="space-y-2 text-sm">
-          {/*finance checklist*/}
-          <div>
+
+        <p className="mb-4 text-sm text-gray-600">
+          Before you dive in, make sure you’ve completed today’s quick checks:
+        </p>
+
+        <div className="space-y-3 text-sm">
+          {/* Finance checklist */}
+          <div className="space-y-2">
             {residents.map((r) => (
               <FinanceReminder residentId={r.id} key={r.id} />
             ))}
+          </div>
+
+          {/* Shift‑log reminder */}
+          <div className="flex items-center gap-2">
+            <span className="text-gray-700">
+              Stay synced with your team — review today’s&nbsp;shift&nbsp;log:
+            </span>
+            <Link
+              href={`/dashboard/group-homes/${currentHome.id}?tab=logs`}
+              className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-indigo-700 transition"
+            >
+              Open&nbsp;Logs
+            </Link>
           </div>
         </div>
       </section>
