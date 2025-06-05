@@ -8,9 +8,12 @@ import HomeScreen from '@/_componets/HomeScreen';
 
 function Page() {
   const homeState = useSelector((state: RootState) => state.grouphome);
+  const ready =
+    homeState.grouphomeInfo.id !== 0 && // id is safer than name !== ''
+    homeState.residents.length !== 0; // boolean you set after fetch
   return (
     <>
-      {homeState.residents.length !== 0 && homeState.grouphomeInfo.name !== '' ? (
+      {ready ? (
         <HomeScreen />
       ) : (
         <Overlay brightness={0.8}>

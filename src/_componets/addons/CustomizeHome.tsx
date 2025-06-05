@@ -2,7 +2,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import WelcomeSplash from '@/_componets/addons/WelcomeSplash';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { GroupHomeFetch } from '@/interfaces/groupHomeInterface';
 import { Button } from '@/components/ui/button';
 import { ResidentFetch } from '@/interfaces/clientInterface';
@@ -10,6 +10,10 @@ import { setGroupHomeClients, setGrouphomeInfo } from '@/redux/slices/groupHomeS
 
 export default function CustomizeHome() {
   const currentStaff = useSelector((state: RootState) => state.user.userInfo);
+  const splashElement = useMemo(
+    () => <WelcomeSplash userFirstName={currentStaff.firstName} />,
+    [currentStaff.firstName]
+  );
   const [homes, setHomes] = useState<GroupHomeFetch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedHome, setSelectedHome] = useState<number | ''>('');
@@ -82,9 +86,7 @@ export default function CustomizeHome() {
   return (
     <div>
       {/*greeting for staff*/}
-      <div>
-        <WelcomeSplash userFirstName={currentStaff.firstName} />
-      </div>
+      <div>{splashElement}</div>
       {/*  home selection*/}
       <div className="mx-auto mt-8 flex w-full max-w-md flex-col gap-4 rounded-lg border border-purple-500 bg-gray-900/60 p-6 shadow-lg backdrop-blur-sm">
         {isLoading && <p className="text-center text-sm text-gray-300">Loading…</p>}
