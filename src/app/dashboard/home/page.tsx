@@ -6,7 +6,11 @@ import Overlay from '@/_componets/addons/Overlay';
 import CustomizeHome from '@/_componets/addons/CustomizeHome';
 import HomeScreen from '@/_componets/HomeScreen';
 import { getSavedHome } from '@/lib/saveHomeToLocalStorage';
-import { setGroupHomeClients, setGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
+import {
+  resetGrouphomeInfo,
+  setGroupHomeClients,
+  setGrouphomeInfo,
+} from '@/redux/slices/groupHomeSlice';
 import Loading from '@/_componets/addons/Loading';
 
 function Page() {
@@ -20,8 +24,12 @@ function Page() {
       return; // nothing to hydrate
     }
 
-    // if slice already has a home (e.g., user switched manually) skip
-    if (store.getState().grouphome.grouphomeInfo.id) return;
+    // If a home is already in Redux (e.g., you just came back from Home 11),
+    // skip the fetch **and** clear the spinner.
+    if (store.getState().grouphome.grouphomeInfo.id) {
+      setHydrating(false);
+      return;
+    }
 
     // fetch home info + residents, then dispatch
     (async () => {
