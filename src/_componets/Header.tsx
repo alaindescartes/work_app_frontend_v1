@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
 import { userSignOut } from '@/redux/slices/userSlice';
 import { AppDispatch } from '@/redux/store';
+import { resetGrouphomeInfo } from '@/redux/slices/groupHomeSlice';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -37,10 +38,12 @@ function Header() {
 
       if (response.ok) {
         router.push('/sign-in');
+        dispatch(userSignOut());
+        dispatch(resetGrouphomeInfo());
         toast('Successfully logged out', {
           style: { backgroundColor: 'green', color: 'white' },
         });
-        dispatch(userSignOut());
+
         return;
       } else {
         toast(data.message || 'Logout failed', {
