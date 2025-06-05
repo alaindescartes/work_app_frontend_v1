@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, store } from '@/redux/store';
 import Overlay from '@/_componets/addons/Overlay';
@@ -10,10 +10,14 @@ import { setGroupHomeClients, setGrouphomeInfo } from '@/redux/slices/groupHomeS
 
 function Page() {
   const dispatch = useDispatch();
+  const [hydrating, setHydrating] = useState(true);
 
   useEffect(() => {
     const savedId = getSavedHome(); // null | number
-    if (!savedId) return; // nothing to hydrate
+    if (!savedId) {
+      setHydrating(false); // no saved home, done hydrating
+      return; // nothing to hydrate
+    }
 
     // if slice already has a home (e.g., user switched manually) skip
     if (store.getState().grouphome.grouphomeInfo.id) return;
@@ -37,12 +41,15 @@ function Page() {
         dispatch(setGrouphomeInfo(home.groupHome));
         dispatch(setGroupHomeClients(residents.residentsData));
       }
+      setHydrating(false);
     })();
   }, [dispatch]);
 
   /* ------------- normal ready gate ------------- */
   const homeState = useSelector((s: RootState) => s.grouphome);
   const ready = homeState.grouphomeInfo.id !== 0 && homeState.residents.length !== 0;
+
+  if (hydrating) return null; // prevent initial overlay flash
 
   return ready ? (
     <HomeScreen />
