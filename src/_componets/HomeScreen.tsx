@@ -12,7 +12,7 @@ function HomeScreen() {
   const residents = useSelector((state: RootState) => state.grouphome.residents);
 
   return (
-    <main className="p-8 space-y-10 text-gray-800 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <main className="p-8 space-y-10 text-gray-800 bg-gray-100 min-h-screen">
       <header className="mb-6">
         <h2 className="text-4xl font-extrabold text-indigo-900 tracking-tight">
           Welcome back, {staff.firstName}
@@ -103,8 +103,16 @@ function HomeScreen() {
         {/* Emergency Contacts */}
         <Card title="Emergency Contacts">
           <Info label="Program Manager" value="David Hunt" />
-          <Info label="Phone" value="(555) 234-1234" />
-          <Info label="Email" value="david.hunt@example.com" />
+          <Info label="On‑Call Supervisor" value="(555) 111‑2222" />
+
+          {/* Critical numbers */}
+          <Info label="Police / Fire (Non‑Emergency)" value="(555) 311‑0000" />
+          <Info label="Poison Control" value="1‑800‑222‑1222" />
+          <Info label="24‑Hour Nurse Line" value="(555) 987‑6543" />
+
+          {/* General office */}
+          <Info label="Office Phone" value="(555) 234‑1234" />
+          <Info label="Office Email" value="david.hunt@example.com" />
         </Card>
 
         {/*/!* Quick Actions *!/*/}
