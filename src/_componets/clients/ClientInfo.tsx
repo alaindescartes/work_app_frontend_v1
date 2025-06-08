@@ -5,12 +5,17 @@ import { RootState } from '@/redux/store';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaArrowLeft } from 'react-icons/fa';
+import { format } from 'date-fns';
+
+const formatISODate = (iso: string | Date | undefined) =>
+  iso ? format(new Date(iso), 'yyyy-MM-dd') : 'N/A';
 
 export default function ClientInfo({ clientId }: { clientId: string }) {
   const clients = useSelector((state: RootState) => state.grouphome.residents);
   const router = useRouter();
 
-  const resident = clients.find(client => client.id === Number(clientId));
+  const resident = clients.find((client) => client.id === Number(clientId));
+  console.log(resident);
 
   if (!resident) {
     return (
@@ -62,11 +67,11 @@ export default function ClientInfo({ clientId }: { clientId: string }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h4 className="font-semibold text-purple-600">Date of Birth:</h4>
-            <p className="text-gray-700">{resident.dateOfBirth}</p>
+            <p className="text-gray-700">{formatISODate(resident.dateOfBirth)}</p>
           </div>
           <div>
             <h4 className="font-semibold text-purple-600">Admission Date:</h4>
-            <p className="text-gray-700">{resident.admissionDate}</p>
+            <p className="text-gray-700">{formatISODate(resident.admissionDate)}</p>
           </div>
           <div>
             <h4 className="font-semibold text-purple-600">Healthcare Number:</h4>
