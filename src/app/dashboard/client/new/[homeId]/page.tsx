@@ -31,6 +31,7 @@ export default function AddResidentForm() {
     funderID: undefined,
     image_file: null,
   });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target;
@@ -75,7 +76,6 @@ export default function AddResidentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting resident:', formData);
 
     const requiredFields = [
       'firstName',
@@ -100,6 +100,7 @@ export default function AddResidentForm() {
 
     if (!hasError) {
       try {
+        setIsLoading(true);
         const formPayload = new FormData();
         formPayload.append('firstName', formData.firstName);
         formPayload.append('lastName', formData.lastName);
@@ -138,7 +139,6 @@ export default function AddResidentForm() {
             style: { backgroundColor: 'green', color: 'white' },
           });
           router.push(`/dashboard/group-homes/${params.homeId}`);
-          console.log(response.body);
         }
       } catch (e) {
         toast('Error adding client.', {
@@ -147,6 +147,8 @@ export default function AddResidentForm() {
         if (process.env.NEXT_PUBLIC_NODE_ENV !== 'production') {
           console.error('Error submitting resident', e);
         }
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -355,9 +357,10 @@ export default function AddResidentForm() {
       <div className="flex justify-center">
         <Button
           type="submit"
+          disabled={isLoading}
           className="bg-purple-700 hover:bg-purple-800 text-white font-bold px-8 py-3 rounded-md mt-6"
         >
-          Add Resident
+          {isLoading ? 'Adding Resident...' : ' Add Resident'}
         </Button>
       </div>
     </form>
