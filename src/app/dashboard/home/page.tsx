@@ -16,9 +16,11 @@ import Loading from '@/_componets/addons/Loading';
 function Page() {
   const dispatch = useDispatch();
   const [hydrating, setHydrating] = useState(true);
+  const currentStaffId = useSelector((state: RootState) => state.user.userInfo.staffId);
 
   useEffect(() => {
-    const savedId = getSavedHome(); // null | number
+    const savedId = getSavedHome(currentStaffId); // null | number
+
     if (!savedId) {
       setHydrating(false); // no saved home, done hydrating
       return; // nothing to hydrate
