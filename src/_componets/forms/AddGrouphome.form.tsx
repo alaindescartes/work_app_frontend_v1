@@ -30,13 +30,13 @@ function AddGroupHomeForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, image: file }));
+      setFormData((prev) => ({ ...prev, image: file }));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,10 +70,20 @@ function AddGroupHomeForm() {
 
       if (response.ok) {
         toast('Successfully added!', { style: { backgroundColor: 'green', color: 'white' } });
-        console.log(response);
+        setFormData({
+          name: '',
+          address: '',
+          phone: '',
+          status: '',
+          managerName: '',
+          supervisorName: '',
+          type: '',
+          notes: '',
+          image: null,
+        });
       }
     } catch (e) {
-      console.error(e);
+      if (process.env.NODE_ENV !== 'development') console.error(e);
     } finally {
       setIsSubmitting(false);
     }
@@ -99,7 +109,7 @@ function AddGroupHomeForm() {
           { label: "Manager's Name", name: 'managerName' },
           { label: "Supervisor's Name", name: 'supervisorName' },
           { label: 'Type', name: 'type' },
-        ].map(field => (
+        ].map((field) => (
           <div key={field.name}>
             <div className="flex flex-row gap-2">
               <label className="block text-sm font-medium text-purple-600 mb-1">
@@ -148,7 +158,7 @@ function AddGroupHomeForm() {
           disabled={isSubmitting}
           className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer"
         >
-          Add Group Home
+          {isSubmitting ? 'Adding Home...' : 'Add Group Home'}
         </Button>
       </form>
     </div>
