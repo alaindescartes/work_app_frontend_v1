@@ -44,14 +44,14 @@ function AllGroupHomes() {
   return (
     <div className="p-8 space-y-6 bg-gray-50 min-h-screen">
       <h2 className="text-3xl font-bold text-purple-700 text-center">Group Homes</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         {isLoading
           ? skeletons.map((_, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-200 animate-pulse"
+                className="flex flex-col h-full bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-200 animate-pulse"
               >
-                <div className="w-full h-40 bg-purple-100" />
+                <div className="w-full h-64 bg-purple-100" />
                 <div className="p-6 space-y-3">
                   <div className="h-4 bg-purple-200 rounded w-2/3" />
                   <div className="h-3 bg-gray-200 rounded w-1/2" />
@@ -61,9 +61,9 @@ function AllGroupHomes() {
                 </div>
               </div>
             ))
-          : homes.map(home => (
+          : homes.map((home) => (
               <Link href={`/dashboard/group-homes/${home.id}`} key={home.id}>
-                <div className="bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-400 cursor-pointer transform transition duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
+                <div className="flex flex-col h-full bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-400 cursor-pointer transform transition duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
                   {/* Image or Placeholder */}
                   {home.image_url ? (
                     <Image
@@ -71,16 +71,16 @@ function AllGroupHomes() {
                       alt={`Image of ${home.name}`}
                       width={500}
                       height={256}
-                      className="w-full max-h-64 object-cover bg-white"
+                      className="h-64 w-full object-cover"
                       unoptimized
                     />
                   ) : (
-                    <div className="w-full h-64 bg-purple-100 flex items-center justify-center">
+                    <div className="h-64 w-full bg-purple-100 flex items-center justify-center">
                       <span className="text-purple-500 text-sm">No Image Available</span>
                     </div>
                   )}
 
-                  <div className="p-6">
+                  <div className="p-6 flex-1 flex flex-col">
                     <h3 className="text-xl font-semibold text-purple-800 mb-1">{home.name}</h3>
                     <p className="text-sm text-gray-600">{home.address}</p>
                     <div className="mt-2 space-y-1 text-sm">
@@ -103,7 +103,7 @@ function AllGroupHomes() {
                         </span>
                       </p>
                     </div>
-                    <p className="text-xs text-gray-400 mt-4 italic">{home.notes}</p>
+                    <p className="mt-4 line-clamp-2 text-xs italic text-gray-400">{home.notes}</p>
                   </div>
                 </div>
               </Link>
