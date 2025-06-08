@@ -15,7 +15,6 @@ export default function ClientInfo({ clientId }: { clientId: string }) {
   const router = useRouter();
 
   const resident = clients.find((client) => client.id === Number(clientId));
-  console.log(resident);
 
   if (!resident) {
     return (
