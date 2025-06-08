@@ -92,7 +92,7 @@ function HomeScreen() {
           <h4 className="mb-2 text-xs sm:text-sm font-semibold text-indigo-700">
             Upcoming Client Schedules
           </h4>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {residents.map((r) => (
               <ScheduleHome
                 resident_id={r.id}

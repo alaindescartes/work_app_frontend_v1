@@ -18,6 +18,7 @@ type ScheduleHomeProps = {
 
 export default function ScheduleHome(props: ScheduleHomeProps) {
   const homeId = useSelector((state: RootState) => state.grouphome.grouphomeInfo.id);
+
   const { data: schedules } = useGetSchedulesQuery(homeId, {
     /* auto‑refresh when tab gains focus, or every 60 s */
     refetchOnMountOrArgChange: true,
@@ -35,9 +36,14 @@ export default function ScheduleHome(props: ScheduleHomeProps) {
     return [];
   })();
 
+  /* Filter schedules for this resident only */
+  const residentSchedules = list.filter((s: Schedule) => s.residentId === props.resident_id);
+
   /* Only keep schedules that end today or in the future */
   const today = startOfToday();
-  const upcoming = list.filter((s: Schedule) => new Date(s.end_time).valueOf() >= today.valueOf());
+  const upcoming = residentSchedules.filter(
+    (s: Schedule) => new Date(s.end_time).valueOf() >= today.valueOf()
+  );
 
   if (upcoming.length === 0) {
     return (
@@ -48,11 +54,11 @@ export default function ScheduleHome(props: ScheduleHomeProps) {
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="space-y-4">
       {upcoming.map((s: Schedule) => (
         <li
           key={s.id}
-          className="flex flex-col rounded-xl border border-indigo-200 bg-white/90 p-5 shadow-md transition hover:shadow-lg"
+          className="flex flex-col h-full rounded-xl border border-indigo-200 bg-white/90 p-5 shadow-md transition hover:shadow-lg"
         >
           {/* Header */}
           <div className="mb-3 flex items-start justify-between">
@@ -61,6 +67,7 @@ export default function ScheduleHome(props: ScheduleHomeProps) {
               {s.schedule_type}
             </span>
           </div>
+          <div className="mb-3 h-px w-full bg-indigo-100" />
 
           {/* Date + time */}
           <p className="mb-2 text-sm text-gray-600">
