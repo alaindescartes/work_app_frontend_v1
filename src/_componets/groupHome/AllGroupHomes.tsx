@@ -51,13 +51,17 @@ function AllGroupHomes() {
                 key={idx}
                 className="flex flex-col h-full bg-white rounded-2xl shadow-md overflow-hidden border-t-4 border-purple-200 animate-pulse"
               >
-                <div className="w-full h-64 bg-purple-100" />
-                <div className="p-6 space-y-3">
-                  <div className="h-4 bg-purple-200 rounded w-2/3" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="h-3 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/3" />
-                  <div className="h-2 bg-gray-100 rounded w-full mt-4" />
+                {/* Fixed‑height image placeholder */}
+                <div className="h-64 w-full bg-purple-100" />
+
+                {/* Text zone mirrors real card */}
+                <div className="flex flex-col flex-1 p-6 space-y-3">
+                  <div className="h-4 w-2/3 rounded bg-purple-200" />
+                  <div className="h-3 w-1/2 rounded bg-gray-200" />
+                  <div className="h-3 w-3/4 rounded bg-gray-200" />
+                  <div className="h-3 w-1/3 rounded bg-gray-200" />
+                  {/* extra placeholder where notes would be */}
+                  <div className="mt-auto h-2 w-full rounded bg-gray-100" />
                 </div>
               </div>
             ))
