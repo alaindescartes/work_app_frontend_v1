@@ -1,32 +1,63 @@
 'use client';
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/redux/store';
 import FinanceReminder from '@/_componets/addons/HomeScreen/FinanceReminder';
 import Link from 'next/link';
 import ScheduleHome from '@/_componets/addons/HomeScreen/ScheduleHome';
+import { Button } from '@/components/ui/button';
+import { clearSavedHome } from '@/lib/saveHomeToLocalStorage';
+import Overlay from '@/_componets/addons/Overlay';
+import CustomizeHome from '@/_componets/addons/CustomizeHome';
+import { resetGrouphomeInfo, setGroupHomeClients } from '@/redux/slices/groupHomeSlice';
 
 function HomeScreen() {
   const staff = useSelector((state: RootState) => state.user.userInfo);
   const currentHome = useSelector((state: RootState) => state.grouphome.grouphomeInfo);
   const residents = useSelector((state: RootState) => state.grouphome.residents);
+  const [isSelectingHome, setisSelectingHome] = useState<boolean>(false);
+  const dispatch = useDispatch();
+
+  if (isSelectingHome) {
+    return (
+      <Overlay brightness={0.8}>
+        <CustomizeHome />
+      </Overlay>
+    );
+  }
 
   return (
-    <main className="p-8 space-y-10 text-gray-800 bg-gray-100 min-h-screen">
-      <header className="mb-6">
-        <h2 className="text-4xl font-extrabold text-indigo-900 tracking-tight">
-          Welcome back, {staff.firstName}
-        </h2>
-        <p className="text-base text-gray-600 mt-1">
-          Here’s your personalized shift dashboard for today.
-        </p>
+    <main className="p-4 md:p-8 space-y-8 md:space-y-10 text-gray-800 bg-gray-100 min-h-screen">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Greeting */}
+        <div>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-indigo-900 tracking-tight">
+            Welcome back, {staff.firstName}
+          </h2>
+          <p className="mt-1 text-base text-gray-600">
+            Here’s your personalized shift dashboard for today.
+          </p>
+        </div>
+
+        {/* Change‑home button */}
+        <Button
+          className="ml-auto w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
+          onClick={() => {
+            clearSavedHome(staff.staffId);
+            dispatch(resetGrouphomeInfo());
+            dispatch(setGroupHomeClients([]));
+            setisSelectingHome(true);
+          }}
+        >
+          Change&nbsp;Home
+        </Button>
       </header>
 
       {/* ────────────────── Shift Snapshot ────────────────── */}
-      <section className="rounded-3xl border border-indigo-200 bg-white/80 px-8 py-8 shadow-xl ring-1 ring-indigo-50 backdrop-blur-md">
+      <section className="rounded-3xl border border-indigo-200 bg-white/80 px-6 md:px-8 py-6 md:py-8 shadow-xl ring-1 ring-indigo-50 backdrop-blur-md overflow-x-auto">
         {/* Header */}
         <header className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-2xl font-extrabold text-indigo-800 flex items-center gap-2">
+          <h3 className="text-xl sm:text-2xl font-extrabold text-indigo-800 flex items-center gap-2">
             <span className="inline-block h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
             Shift&nbsp;Snapshot&nbsp;&mdash;&nbsp;{currentHome.name}
           </h3>
@@ -35,7 +66,7 @@ function HomeScreen() {
 
         {/* Finance checklist */}
         <div className="mb-6">
-          <h4 className="mb-2 text-sm font-semibold text-indigo-700">Cash Counts</h4>
+          <h4 className="mb-2 text-xs sm:text-sm font-semibold text-indigo-700">Cash Counts</h4>
           <div className="space-y-2">
             {residents.map((r) => (
               <FinanceReminder residentId={r.id} key={r.id} />
@@ -58,7 +89,9 @@ function HomeScreen() {
 
         {/* Upcoming schedules */}
         <div>
-          <h4 className="mb-2 text-sm font-semibold text-indigo-700">Upcoming Client Schedules</h4>
+          <h4 className="mb-2 text-xs sm:text-sm font-semibold text-indigo-700">
+            Upcoming Client Schedules
+          </h4>
           <div className="space-y-2">
             {residents.map((r) => (
               <ScheduleHome
@@ -72,7 +105,7 @@ function HomeScreen() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Group Home */}
         <Card title="My Group Home">
           <Info label="Location" value={currentHome.address} />
@@ -138,7 +171,7 @@ const Card = ({
 }) => (
   <div
     className={`
-      relative overflow-hidden rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-indigo-50
+      relative overflow-hidden rounded-3xl bg-white/90 p-4 md:p-6 shadow-lg ring-1 ring-indigo-50
       transition hover:shadow-xl
       ${className}
     `}
